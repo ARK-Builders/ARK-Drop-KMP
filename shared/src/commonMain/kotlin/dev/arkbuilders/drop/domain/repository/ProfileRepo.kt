@@ -2,16 +2,14 @@ package dev.arkbuilders.drop.domain.repository
 
 import dev.arkbuilders.drop.domain.model.UserAvatar
 import dev.arkbuilders.drop.domain.model.UserProfile
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
 
 interface ProfileRepo {
-    val profile: StateFlow<UserProfile>
+    val profile: Flow<UserProfile>
 
-    fun getCurrentProfile() = profile.value
+    suspend fun updateProfile(profile: UserProfile)
 
-    fun updateProfile(profile: UserProfile)
+    suspend fun updateName(name: String)
 
-    fun updateName(name: String)
-
-    fun updateAvatar(avatar: UserAvatar)
+    suspend fun updateAvatar(avatar: UserAvatar)
 }

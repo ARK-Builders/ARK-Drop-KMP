@@ -30,6 +30,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // put your Multiplatform dependencies here
+            implementation(libs.androidx.datastore)
+            implementation(libs.androidx.datastore.preferences)
             implementation(libs.kermit)
             implementation(libs.coroutines.core)
             implementation(libs.koin.core)

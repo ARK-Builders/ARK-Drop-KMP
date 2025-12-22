@@ -11,6 +11,7 @@ import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderProfile
 import dev.arkbuilders.drop.domain.repository.ProfileRepo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 class SendFilesUseCase(
@@ -22,7 +23,7 @@ class SendFilesUseCase(
             runCatching {
                 Logger.d("Starting file send for ${fileUris.size} files")
 
-                val profile = profileRepo.getCurrentProfile()
+                val profile = profileRepo.profile.first()
                 val senderProfile =
                     DropSenderProfile(
                         name = profile.name.ifEmpty { "Anonymous" },

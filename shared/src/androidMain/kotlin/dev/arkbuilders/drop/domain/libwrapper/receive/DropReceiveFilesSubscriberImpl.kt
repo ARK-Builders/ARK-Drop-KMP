@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 class DropReceiveFilesSubscriberImpl(val native: ReceiveFilesSubscriberImpl): DropReceiveFilesSubscriber {
     override val progress: StateFlow<DropReceivingProgress> = native.progress
+
+    override fun getCompleteFiles() = native.getCompleteFiles()
 }
 
 class ReceiveFilesSubscriberImpl: ReceiveFilesSubscriber {

@@ -4,4 +4,6 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface DropReceiveFilesSubscriber {
     val progress: StateFlow<DropReceivingProgress>
+
+    fun getCompleteFiles(): List<Pair<ReceiveFileInfo, ByteArray>>
 }
