@@ -3,13 +3,14 @@ package dev.arkbuilders.drop.domain.libwrapper.send
 import android.content.Context
 import android.net.Uri
 import dev.arkbuilders.drop.SenderFileData
+import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderFileData
 import timber.log.Timber
 import java.io.InputStream
 
 class SenderFileDataImpl(
     private val context: Context,
     private val uri: Uri,
-) : SenderFileData {
+) : DropSenderFileData {
     companion object {
         private const val TAG = "SenderFileDataImpl"
     }
