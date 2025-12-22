@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.implementation
+import org.gradle.kotlin.dsl.type
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -25,9 +27,19 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // put your Multiplatform dependencies here
+            implementation(libs.kermit)
+            implementation(libs.coroutines.core)
+            implementation(libs.koin.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+        }
+        androidMain.dependencies {
+            implementation(libs.coroutines.android)
+            implementation(libs.koin.android)
+            implementation(libs.jna)
+            implementation(libs.arkbuilders.drop)
+            implementation(libs.timber)
         }
     }
 }

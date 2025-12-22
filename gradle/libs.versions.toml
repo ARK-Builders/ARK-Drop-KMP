@@ -12,6 +12,12 @@ androidx-testExt = "1.3.0"
 composeMultiplatform = "1.9.3"
 junit = "4.13.2"
 kotlin = "2.2.21"
+drop = "17348879247"
+timber = "5.0.1"
+jna = "5.15.0"
+koin = "3.4.3"
+coroutines = "1.7.3"
+kermit = "2.0.4"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -24,6 +30,18 @@ androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "a
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+
+arkbuilders-drop = { module = "dev.arkbuilders:drop", version.ref = "drop" }
+jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
+timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
