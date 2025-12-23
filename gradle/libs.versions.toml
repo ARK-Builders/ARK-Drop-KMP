@@ -14,6 +14,7 @@ datastore = "1.2.0"
 junit = "4.13.2"
 kotlin = "2.2.21"
 drop = "17348879247"
+orbit = "11.0.0"
 timber = "5.0.1"
 jna = "5.15.0"
 koin = "3.4.3"
@@ -23,6 +24,7 @@ ksp = "2.2.21-2.0.4"
 room = "2.8.4"
 sqlite = "2.6.2"
 kotlinSerialization = "1.9.0"
+googleZxingCore = "3.5.3"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -56,6 +58,11 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+
+orbit-viewmodel = { module = "org.orbit-mvi:orbit-viewmodel", version.ref = "orbit" }
+orbit-core = { module = "org.orbit-mvi:orbit-core", version.ref = "orbit" }
+
+google-zxing-core = { group = "com.google.zxing", name = "core", version.ref = "googleZxingCore" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

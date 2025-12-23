@@ -14,5 +14,10 @@ expect class ResourcesHelper() {
         data: ByteArray,
     ): String?
 
+    fun generateQRCode(
+        ticket: String,
+        confirmation: UByte,
+    ): ByteArray?
+
     fun mapToSenderFileData(uri: String): DropSenderFileData
 }

@@ -30,6 +30,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // put your Multiplatform dependencies here
+            implementation(libs.orbit.core)
+            implementation(libs.orbit.viewmodel)
             implementation(libs.androidx.datastore)
             implementation(libs.androidx.datastore.preferences)
             implementation(libs.kermit)
@@ -43,6 +45,7 @@ kotlin {
             implementation(libs.kotlin.test)
         }
         androidMain.dependencies {
+            implementation(libs.google.zxing.core)
             implementation(libs.coroutines.android)
             implementation(libs.koin.android)
             implementation(libs.jna)
