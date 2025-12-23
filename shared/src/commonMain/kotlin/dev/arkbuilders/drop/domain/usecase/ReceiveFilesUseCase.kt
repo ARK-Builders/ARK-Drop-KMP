@@ -9,6 +9,7 @@ import dev.arkbuilders.drop.domain.libwrapper.receive.request.DropReceiverProfil
 import dev.arkbuilders.drop.domain.repository.ProfileRepo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 class ReceiveFilesUseCase(
@@ -22,7 +23,7 @@ class ReceiveFilesUseCase(
             runCatching {
                 Logger.d("Starting file receive with ticket: $ticket")
 
-                val profile = profileRepo.getCurrentProfile()
+                val profile = profileRepo.profile.first()
                 val receiverProfile =
                     DropReceiverProfile(
                         name = profile.name.ifEmpty { "Anonymous" },
