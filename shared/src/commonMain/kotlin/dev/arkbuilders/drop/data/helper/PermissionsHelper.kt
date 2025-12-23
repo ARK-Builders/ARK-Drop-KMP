@@ -1,6 +1,6 @@
-package dev.arkbuilders.drop.domain.helper
+package dev.arkbuilders.drop.data.helper
 
-interface PermissionsHelper {
+expect class PermissionsHelper() {
     fun isCameraGranted(): Boolean
 
     fun isWritePermissionGranted(): Boolean

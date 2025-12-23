@@ -5,19 +5,18 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
-import dev.arkbuilders.drop.domain.helper.PermissionsHelper
 
-class PermissionsHelperImpl(
+actual class PermissionsHelper(
     private val ctx: Context,
-) : PermissionsHelper {
-    override fun isCameraGranted(): Boolean {
+) {
+    actual fun isCameraGranted(): Boolean {
         return ContextCompat.checkSelfPermission(
             ctx,
             Manifest.permission.CAMERA,
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    override fun isWritePermissionGranted(): Boolean {
+    actual fun isWritePermissionGranted(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             true
         } else {

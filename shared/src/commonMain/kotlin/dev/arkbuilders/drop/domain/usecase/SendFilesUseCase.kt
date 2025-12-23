@@ -1,7 +1,7 @@
 package dev.arkbuilders.drop.domain.usecase
 
 import co.touchlab.kermit.Logger
-import dev.arkbuilders.drop.domain.helper.ResourcesHelper
+import dev.arkbuilders.drop.data.helper.ResourcesHelper
 import dev.arkbuilders.drop.domain.libwrapper.getDropApi
 import dev.arkbuilders.drop.domain.libwrapper.send.DropSendFilesBubble
 import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSendFilesRequest

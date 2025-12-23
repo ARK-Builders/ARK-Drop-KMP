@@ -4,12 +4,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import dev.arkbuilders.drop.domain.helper.AvatarHelper
+import dev.arkbuilders.drop.data.helper.AvatarHelper
 import dev.arkbuilders.drop.domain.model.UserAvatar
 import dev.arkbuilders.drop.domain.model.UserProfile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json

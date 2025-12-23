@@ -7,19 +7,18 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
-import dev.arkbuilders.drop.domain.helper.NetworkStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 @SuppressLint("MissingPermission")
-class NetworkStatusImpl(
-    context: Context,
-) : NetworkStatus {
+actual class NetworkStatus(private val context: Context) {
+    actual fun isOnline() = onlineStatus.value
+
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
     private val _onlineStatus = MutableStateFlow(checkIsOnline())
-    override val onlineStatus: StateFlow<Boolean> = _onlineStatus
+    actual val onlineStatus: StateFlow<Boolean> = _onlineStatus
 
     init {
         val networkRequest =

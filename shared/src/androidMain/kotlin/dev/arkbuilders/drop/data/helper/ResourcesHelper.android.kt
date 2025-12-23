@@ -9,7 +9,6 @@ import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
-import dev.arkbuilders.drop.domain.helper.ResourcesHelper
 import dev.arkbuilders.drop.domain.libwrapper.send.SenderFileDataImpl
 import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderFileData
 import timber.log.Timber
@@ -17,10 +16,10 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.URLConnection
 
-class ResourcesHelperImpl(
+actual class ResourcesHelper(
     private val context: Context,
-) : ResourcesHelper {
-    override fun getFileName(uri: String): String? {
+) {
+    actual fun getFileName(uri: String): String? {
         return try {
             context
                 .contentResolver
@@ -39,7 +38,7 @@ class ResourcesHelperImpl(
         }
     }
 
-    override fun validateUris(uris: List<String>): Pair<List<String>, Int> {
+    actual fun validateUris(uris: List<String>): Pair<List<String>, Int> {
         val validFiles = mutableListOf<String>()
         var skippedCount = 0
 
@@ -59,7 +58,7 @@ class ResourcesHelperImpl(
         return validFiles to skippedCount
     }
 
-    override fun getFileSize(uri: String): Long {
+    actual fun getFileSize(uri: String): Long {
         return try {
             context.contentResolver.query(uri.toUri(), null, null, null, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
@@ -74,7 +73,7 @@ class ResourcesHelperImpl(
         }
     }
 
-    override fun saveFileToDownloads(
+    actual fun saveFileToDownloads(
         fileName: String,
         data: ByteArray,
     ): String? {
@@ -87,7 +86,7 @@ class ResourcesHelperImpl(
         }
     }
 
-    override fun mapToSenderFileData(uri: String): DropSenderFileData {
+    actual fun mapToSenderFileData(uri: String): DropSenderFileData {
         return SenderFileDataImpl(context, uri.toUri())
     }
 

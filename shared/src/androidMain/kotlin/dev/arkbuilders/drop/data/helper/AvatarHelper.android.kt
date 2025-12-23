@@ -9,16 +9,10 @@ import android.os.Build
 import android.util.Base64
 import androidx.core.graphics.scale
 import androidx.core.net.toUri
-import dev.arkbuilders.drop.domain.helper.AvatarHelper
-import dev.arkbuilders.drop.domain.helper.AvatarHelper.Companion.JPEG_QUALITY
-import dev.arkbuilders.drop.domain.helper.AvatarHelper.Companion.MAX_FILE_SIZE
-import dev.arkbuilders.drop.domain.helper.AvatarHelper.Companion.MAX_IMAGE_SIZE
 import java.io.ByteArrayOutputStream
 
-class AvatarHelperImpl(
-    private val context: Context,
-) : AvatarHelper {
-    override fun uriToBase64(uri: String): String? {
+actual class AvatarHelper(private val context: Context) {
+    actual fun uriToBase64(uri: String): String? {
         return try {
             val bitmap = loadBitmapFromUri(uri.toUri()) ?: return null
             val optimizedBitmap = optimizeBitmap(bitmap)
@@ -81,7 +75,7 @@ class AvatarHelperImpl(
         }
     }
 
-    override fun getDefaultAvatarBase64(avatarId: String): String {
+    actual fun getDefaultAvatarBase64(avatarId: String): String {
         return try {
             val resourceId =
                 context.resources.getIdentifier(
@@ -98,5 +92,11 @@ class AvatarHelperImpl(
         } catch (_: Exception) {
             ""
         }
+    }
+
+    companion object {
+        const val MAX_IMAGE_SIZE = 512 // Maximum width/height in pixels
+        const val JPEG_QUALITY = 85 // JPEG compression quality
+        const val MAX_FILE_SIZE = 500 * 1024 // 500KB max file size
     }
 }
