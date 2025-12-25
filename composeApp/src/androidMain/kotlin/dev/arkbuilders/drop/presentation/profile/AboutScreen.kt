@@ -7,13 +7,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import dev.arkbuilders.components.about.presentation.ArkAbout
+import dev.arkbuilders.drop.R
 import dev.arkbuilders.drop.presentation.components.DropTopBarBack
-import org.koin.compose.koinInject
 
 @Composable
 fun AboutScreen(navController: NavController) {
-    val fields = koinInject<BuildConfigFields>()
-
     Scaffold(
         topBar = {
             DropTopBarBack(
@@ -26,7 +24,7 @@ fun AboutScreen(navController: NavController) {
             modifier = Modifier.padding(it),
             appName = stringResource(id = R.string.app_name),
             appLogoResId = R.drawable.ic_logo,
-            versionName = fields.versionName,
+            versionName = "1.0",
             privacyPolicyUrl = "",
         )
     }

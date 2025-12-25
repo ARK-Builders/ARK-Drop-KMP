@@ -2,7 +2,7 @@ package dev.arkbuilders.drop.data.helper
 
 import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderFileData
 
-expect class ResourcesHelper() {
+expect class ResourcesHelper {
     fun getFileName(uri: String): String?
 
     fun validateUris(uris: List<String>): Pair<List<String>, Int>

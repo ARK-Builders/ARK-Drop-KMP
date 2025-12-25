@@ -95,13 +95,14 @@ import dev.arkbuilders.drop.presentation.edit.EditProfileViewModel
 import dev.arkbuilders.drop.presentation.navigation.DropDestination
 import dev.arkbuilders.drop.presentation.theme.DesignTokens
 import kotlinx.coroutines.delay
+import org.koin.compose.koinInject
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileEnhanced(navController: NavController) {
-    val viewModel: EditProfileViewModel =
+    val viewModel: EditProfileViewModel = koinInject()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val nameFocusRequester = remember { FocusRequester() }
