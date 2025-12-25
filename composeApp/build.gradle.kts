@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.implementation
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -19,6 +20,31 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+
+            implementation(libs.androidx.navigation.compose)
+            implementation(libs.ark.about)
+
+            implementation(libs.github.yuriy.budiyev.code.scanner)
+
+            implementation(libs.androidx.camera.core)
+            implementation(libs.androidx.camera.camera2)
+            implementation(libs.androidx.camera.lifecycle)
+            implementation(libs.androidx.camera.view)
+            implementation(libs.mlkit.barcode.scanning)
+
+            implementation(libs.orbit.compose)
+
+            implementation(libs.simple.icons)
+            implementation(libs.font.awesome)
+            implementation(libs.tabler.icons)
+
+            implementation(libs.io.coil)
+
+            implementation(libs.koin.compose)
+
+            implementation(libs.material.icons.extended)
+
+            implementation(libs.kotlinx.datetime)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
