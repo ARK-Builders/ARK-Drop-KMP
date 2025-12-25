@@ -49,7 +49,12 @@ kotlin {
             implementation(libs.google.zxing.core)
             implementation(libs.coroutines.android)
             implementation(libs.koin.android)
-            implementation(libs.jna)
+            implementation(libs.jna.get().toString()) {
+                artifact {
+                    type = "aar"
+                    extension = "aar"
+                }
+            }
             implementation(libs.arkbuilders.drop)
             implementation(libs.timber)
         }

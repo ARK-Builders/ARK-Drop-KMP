@@ -24,8 +24,6 @@ kotlin {
             implementation(libs.androidx.navigation.compose)
             implementation(libs.ark.about)
 
-            implementation(libs.github.yuriy.budiyev.code.scanner)
-
             implementation(libs.androidx.camera.core)
             implementation(libs.androidx.camera.camera2)
             implementation(libs.androidx.camera.lifecycle)

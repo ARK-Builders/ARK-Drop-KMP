@@ -70,7 +70,7 @@ class SendFilesUseCase(
                 )
                 bubble
             }.onFailure {
-                Logger.e("Error starting file send ${it.message}")
+                Logger.e("Error starting file send ${it.message}", it)
             }
         }
 }

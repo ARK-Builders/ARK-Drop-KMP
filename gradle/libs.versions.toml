@@ -1,7 +1,7 @@
 [versions]
 agp = "8.11.2"
 android-compileSdk = "36"
-android-minSdk = "24"
+android-minSdk = "26"
 android-targetSdk = "36"
 androidx-activity = "1.12.0"
 androidx-appcompat = "1.7.1"
@@ -27,7 +27,6 @@ sqlite = "2.6.2"
 kotlinSerialization = "1.9.0"
 googleZxingCore = "3.5.3"
 cameraCore = "1.4.0"
-githubYuriyBudiyevCodeScanner = "2.3.2"
 mlkitBarcodeScanning = "17.3.0"
 devsrsouzaIcons = "1.1.0"
 coil = "2.5.0"
@@ -75,8 +74,6 @@ orbit-viewmodel = { module = "org.orbit-mvi:orbit-viewmodel", version.ref = "orb
 orbit-core = { module = "org.orbit-mvi:orbit-core", version.ref = "orbit" }
 
 google-zxing-core = { group = "com.google.zxing", name = "core", version.ref = "googleZxingCore" }
-
-github-yuriy-budiyev-code-scanner = { group = "com.github.yuriy-budiyev", name = "code-scanner", version.ref = "githubYuriyBudiyevCodeScanner" }
 
 androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraCore" }
 androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraCore" }
