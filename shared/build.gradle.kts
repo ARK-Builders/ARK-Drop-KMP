@@ -37,6 +37,7 @@ kotlin {
             implementation(libs.kermit)
             implementation(libs.coroutines.core)
             implementation(libs.koin.core)
+            implementation(libs.koin.core.viewmodel)
             implementation(libs.androidx.room.runtime)
             implementation(libs.androidx.sqlite.bundled)
             implementation(libs.kotlinx.serialization.json)
