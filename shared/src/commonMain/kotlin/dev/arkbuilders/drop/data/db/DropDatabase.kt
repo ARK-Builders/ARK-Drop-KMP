@@ -16,6 +16,10 @@ import dev.arkbuilders.drop.data.db.typeconverter.DropFileListConverter
 )
 abstract class DropDatabase : RoomDatabase() {
     abstract fun transferHistoryDao(): TransferSessionDao
+
+    companion object {
+        const val DB_NAME = "drop.db"
+    }
 }
 
 // The Room compiler generates the `actual` implementations.
