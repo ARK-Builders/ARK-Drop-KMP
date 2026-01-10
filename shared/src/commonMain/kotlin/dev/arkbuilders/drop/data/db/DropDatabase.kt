@@ -23,7 +23,7 @@ abstract class DropDatabase : RoomDatabase() {
 }
 
 // The Room compiler generates the `actual` implementations.
-@Suppress("KotlinNoActualForExpect")
+@Suppress("KotlinNoActualForExpect", "NO_ACTUAL_FOR_EXPECT")
 expect object DropDatabaseConstructor : RoomDatabaseConstructor<DropDatabase> {
     override fun initialize(): DropDatabase
 }
