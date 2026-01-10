@@ -66,6 +66,15 @@ android {
     namespace = "dev.arkbuilders.drop"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
+    signingConfigs {
+        create("testRelease") {
+            storeFile = project.rootProject.file("keystore.jks")
+            storePassword = "sw0rdf1sh"
+            keyAlias = "ark-builders-test"
+            keyPassword = "rybamech"
+        }
+    }
+
     defaultConfig {
         applicationId = "dev.arkbuilders.drop"
         minSdk = libs.versions.android.minSdk.get().toInt()
@@ -80,6 +89,7 @@ android {
     }
     buildTypes {
         getByName("release") {
+            signingConfig = signingConfigs.getByName("testRelease")
             isMinifyEnabled = false
         }
     }
