@@ -1,5 +1,5 @@
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import org.gradle.kotlin.dsl.implementation
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.ktlint.gradle)
 }
 
 kotlin {
@@ -15,7 +16,7 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(compose.preview)
@@ -92,3 +93,5 @@ dependencies {
     debugImplementation(compose.uiTooling)
 }
 
+tasks.check.dependsOn(tasks.ktlintCheck)
+tasks.ktlintCheck.dependsOn(tasks.ktlintFormat)
