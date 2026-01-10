@@ -7,8 +7,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.arkbuilders.drop.data.db.DropDatabase
+import dev.arkbuilders.drop.data.settings.DATASTORE_FILENAME
 import dev.arkbuilders.drop.data.settings.createDataStore
-import dev.arkbuilders.drop.data.settings.dataStoreFileName
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -18,32 +18,34 @@ import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
 
-actual val platformModule: Module = module {
+actual val platformModule: Module =
+    module {
 
-    single<DropDatabase> {
-        val dbFilePath = documentDirectory() + "/${DropDatabase.DB_NAME}"
+        single<DropDatabase> {
+            val dbFilePath = documentDirectory() + "/${DropDatabase.DB_NAME}"
 
-        Room.databaseBuilder<DropDatabase>(
-            name = dbFilePath,
-        ).setDriver(BundledSQLiteDriver())
-            .setQueryCoroutineContext(Dispatchers.IO)
-            .build()
-    }
+            Room.databaseBuilder<DropDatabase>(
+                name = dbFilePath,
+            ).setDriver(BundledSQLiteDriver())
+                .setQueryCoroutineContext(Dispatchers.IO)
+                .build()
+        }
 
-    single<DataStore<Preferences>> {
-        createDataStore {
-            documentDirectory() + "/$dataStoreFileName"
+        single<DataStore<Preferences>> {
+            createDataStore {
+                documentDirectory() + "/$DATASTORE_FILENAME"
+            }
         }
     }
-}
 
 private fun documentDirectory(): String {
-    val documentDirectory = NSFileManager.defaultManager.URLForDirectory(
-        directory = NSDocumentDirectory,
-        inDomain = NSUserDomainMask,
-        appropriateForURL = null,
-        create = false,
-        error = null,
-    )
+    val documentDirectory =
+        NSFileManager.defaultManager.URLForDirectory(
+            directory = NSDocumentDirectory,
+            inDomain = NSUserDomainMask,
+            appropriateForURL = null,
+            create = false,
+            error = null,
+        )
     return requireNotNull(documentDirectory?.path)
 }

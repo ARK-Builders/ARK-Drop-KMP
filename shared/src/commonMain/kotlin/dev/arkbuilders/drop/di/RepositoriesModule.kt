@@ -12,12 +12,13 @@ import dev.arkbuilders.drop.domain.repository.SendSessionRepo
 import dev.arkbuilders.drop.domain.repository.TransferSessionRepo
 import org.koin.dsl.module
 
-val repositoriesModule = module {
-    single { ProfileLocalDataSource(get(), get()) }
-    single { TransferSessionLocalDataSource(get()) }
+val repositoriesModule =
+    module {
+        single { ProfileLocalDataSource(get(), get()) }
+        single { TransferSessionLocalDataSource(get()) }
 
-    single<ProfileRepo> { ProfileRepoImpl(get()) }
-    single<SendSessionRepo> { SendSessionRepoImpl(get(), get(), get()) }
-    single<ReceiveSessionRepo> { ReceiveSessionRepoImpl(get(), get(), get()) }
-    single<TransferSessionRepo> { TransferSessionRepoImpl(get()) }
-}
+        single<ProfileRepo> { ProfileRepoImpl(get()) }
+        single<SendSessionRepo> { SendSessionRepoImpl(get(), get(), get()) }
+        single<ReceiveSessionRepo> { ReceiveSessionRepoImpl(get(), get(), get()) }
+        single<TransferSessionRepo> { TransferSessionRepoImpl(get()) }
+    }

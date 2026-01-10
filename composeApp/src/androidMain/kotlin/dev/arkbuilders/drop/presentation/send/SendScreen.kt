@@ -11,12 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
-import dev.arkbuilders.drop.presentation.send.components.phase.TransferringPhase
 import dev.arkbuilders.drop.presentation.components.DropErrorCard
 import dev.arkbuilders.drop.presentation.components.DropTopBarBack
 import dev.arkbuilders.drop.presentation.send.components.phase.FileSelectionPhase
 import dev.arkbuilders.drop.presentation.send.components.phase.GeneratingQRPhase
 import dev.arkbuilders.drop.presentation.send.components.phase.TransferCompletePhase
+import dev.arkbuilders.drop.presentation.send.components.phase.TransferringPhase
 import dev.arkbuilders.drop.presentation.send.components.phase.WaitingForReceiverPhase
 import org.koin.compose.koinInject
 import org.orbitmvi.orbit.compose.collectAsState

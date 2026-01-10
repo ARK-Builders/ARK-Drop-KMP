@@ -2,7 +2,6 @@ package dev.arkbuilders.drop.domain.libwrapper.send
 
 import android.content.Context
 import android.net.Uri
-import dev.arkbuilders.drop.SenderFileData
 import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderFileData
 import timber.log.Timber
 import java.io.InputStream

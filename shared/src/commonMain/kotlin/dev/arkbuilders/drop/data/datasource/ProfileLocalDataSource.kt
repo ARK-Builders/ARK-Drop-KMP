@@ -29,7 +29,6 @@ class ProfileLocalDataSource(
     private val dataStore: DataStore<Preferences>,
     private val avatarHelper: AvatarHelper,
 ) {
-
     fun observeProfile(): Flow<UserProfile> =
         dataStore.data
             .map { preferences ->

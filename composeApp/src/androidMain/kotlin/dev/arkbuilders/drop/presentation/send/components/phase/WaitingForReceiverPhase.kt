@@ -3,7 +3,6 @@ package dev.arkbuilders.drop.presentation.send.components.phase
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -47,9 +46,10 @@ fun WaitingForReceiverPhase(
     onCancel: () -> Unit,
 ) {
     val context = LocalContext.current
-    val bitmap = remember(qrBitmap) {
-        BitmapFactory.decodeByteArray(qrBitmap, 0, qrBitmap.size)
-    }
+    val bitmap =
+        remember(qrBitmap) {
+            BitmapFactory.decodeByteArray(qrBitmap, 0, qrBitmap.size)
+        }
 
     Column(
         modifier =

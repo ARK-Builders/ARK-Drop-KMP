@@ -356,7 +356,7 @@ private fun EmptyTransfersSection() {
             title = "No transfers yet",
             description =
                 "Start by sending or receiving files to see your transfer history here." +
-                        " Your recent activity will appear in this section.",
+                    " Your recent activity will appear in this section.",
         )
     }
 }

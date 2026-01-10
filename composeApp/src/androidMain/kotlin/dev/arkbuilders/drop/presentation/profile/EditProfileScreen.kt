@@ -183,7 +183,7 @@ fun EditProfileEnhanced(navController: NavController) {
                         title = "Profile Update Failed",
                         message =
                             "Failed to load image." +
-                                    " Please check your storage permissions and try again.",
+                                " Please check your storage permissions and try again.",
                         actionLabel = "Dismiss",
                         onAction = {
                             viewModel.clearAvatarLoadingError()
@@ -667,9 +667,9 @@ private fun PrivacyNoticeSection() {
                     Text(
                         text =
                             "Your profile information is only shared during file transfers and" +
-                                    " is stored locally on your device." +
-                                    " Custom avatars are processed and" +
-                                    " stored securely without being uploaded to any server.",
+                                " is stored locally on your device." +
+                                " Custom avatars are processed and" +
+                                " stored securely without being uploaded to any server.",
                         style = MaterialTheme.typography.bodySmall,
                         color = colorScheme.onSurfaceVariant,
                         lineHeight = MaterialTheme.typography.bodySmall.lineHeight * 1.2,

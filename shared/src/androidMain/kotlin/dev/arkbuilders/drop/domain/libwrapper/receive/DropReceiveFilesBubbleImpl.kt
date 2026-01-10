@@ -3,8 +3,8 @@ package dev.arkbuilders.drop.domain.libwrapper.receive
 import dev.arkbuilders.drop.ReceiveFilesBubble
 
 class DropReceiveFilesBubbleImpl(
-    private val bubble: ReceiveFilesBubble
-): DropReceiveFilesBubble {
+    private val bubble: ReceiveFilesBubble,
+) : DropReceiveFilesBubble {
     override fun cancel() {
         bubble.cancel()
     }

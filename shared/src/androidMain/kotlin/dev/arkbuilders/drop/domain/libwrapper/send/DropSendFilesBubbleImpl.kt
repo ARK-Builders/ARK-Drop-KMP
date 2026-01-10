@@ -4,7 +4,7 @@ import dev.arkbuilders.drop.SendFilesBubble
 
 class DropSendFilesBubbleImpl(
     private val bubble: SendFilesBubble,
-): DropSendFilesBubble {
+) : DropSendFilesBubble {
     override suspend fun cancel() {
         bubble.cancel()
     }
@@ -38,5 +38,4 @@ class DropSendFilesBubbleImpl(
         val native = (subscriber as DropSendFilesSubscriberImpl).native
         bubble.unsubscribe(native)
     }
-
 }

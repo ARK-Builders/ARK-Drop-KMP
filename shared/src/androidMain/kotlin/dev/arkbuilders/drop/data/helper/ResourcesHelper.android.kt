@@ -10,6 +10,8 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.set
 import androidx.core.net.toUri
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.common.BitMatrix
@@ -17,13 +19,11 @@ import com.google.zxing.qrcode.QRCodeWriter
 import dev.arkbuilders.drop.domain.libwrapper.send.SenderFileDataImpl
 import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderFileData
 import timber.log.Timber
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URLConnection
 import kotlin.IllegalArgumentException
-import androidx.core.graphics.createBitmap
-import androidx.core.graphics.set
-import java.io.ByteArrayOutputStream
 
 actual class ResourcesHelper(
     private val context: Context,
@@ -196,7 +196,7 @@ actual class ResourcesHelper(
 
         val selection =
             "${MediaStore.MediaColumns.DISPLAY_NAME} = ? AND " +
-                    "${MediaStore.MediaColumns.RELATIVE_PATH} = ?"
+                "${MediaStore.MediaColumns.RELATIVE_PATH} = ?"
 
         val selectionArgs =
             arrayOf(
@@ -258,11 +258,12 @@ actual class ResourcesHelper(
 
             for (x in 0 until width) {
                 for (y in 0 until height) {
-                    bitmap[x, y] = if (bitMatrix[x, y]) {
-                        Color.BLACK
-                    } else {
-                        Color.WHITE
-                    }
+                    bitmap[x, y] =
+                        if (bitMatrix[x, y]) {
+                            Color.BLACK
+                        } else {
+                            Color.WHITE
+                        }
                 }
             }
             return ByteArrayOutputStream().use { stream ->

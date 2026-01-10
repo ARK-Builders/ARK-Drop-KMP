@@ -16,37 +16,40 @@ import dev.arkbuilders.drop.domain.libwrapper.receive.ReceiveFilesSubscriberImpl
 import dev.arkbuilders.drop.domain.libwrapper.receive.request.DropReceiveFilesRequest
 import dev.arkbuilders.drop.domain.libwrapper.send.DropSendFilesBubble
 import dev.arkbuilders.drop.domain.libwrapper.send.DropSendFilesBubbleImpl
-import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSendFilesRequest
 import dev.arkbuilders.drop.domain.libwrapper.send.DropSendFilesSubscriber
 import dev.arkbuilders.drop.domain.libwrapper.send.DropSendFilesSubscriberImpl
 import dev.arkbuilders.drop.domain.libwrapper.send.SendFilesSubscriberImpl
+import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSendFilesRequest
 
-class AndroidDropApi: DropApi {
+class AndroidDropApi : DropApi {
     override fun createSendSubscriber(): DropSendFilesSubscriber {
         return DropSendFilesSubscriberImpl(SendFilesSubscriberImpl())
     }
 
     override suspend fun sendFiles(request: DropSendFilesRequest): DropSendFilesBubble {
         val senderProfile = SenderProfile(request.profile.name, request.profile.avatarB64)
-        val files: List<SenderFile> = request.files.map {
-            val data = object : SenderFileData {
-                override fun len(): ULong {
-                    return it.data.len()
-                }
+        val files: List<SenderFile> =
+            request.files.map {
+                val data =
+                    object : SenderFileData {
+                        override fun len(): ULong {
+                            return it.data.len()
+                        }
 
-                override fun read(): UByte? {
-                    return it.data.read()
-                }
+                        override fun read(): UByte? {
+                            return it.data.read()
+                        }
 
-                override fun readChunk(size: Int): ByteArray {
-                    return it.data.readChunk(size)
-                }
+                        override fun readChunk(size: Int): ByteArray {
+                            return it.data.readChunk(size)
+                        }
+                    }
+                SenderFile(it.name, data)
             }
-            SenderFile(it.name, data)
-        }
-        val config = request.config?.let {
-            SenderConfig(it.chunkSize, it.parallelStreams)
-        }
+        val config =
+            request.config?.let {
+                SenderConfig(it.chunkSize, it.parallelStreams)
+            }
         val nativeBubble =
             dev.arkbuilders.drop.sendFiles(SendFilesRequest(senderProfile, files, config))
         return DropSendFilesBubbleImpl(nativeBubble)
@@ -57,12 +60,13 @@ class AndroidDropApi: DropApi {
     }
 
     override suspend fun receiveFiles(request: DropReceiveFilesRequest): DropReceiveFilesBubble {
-        val request = ReceiveFilesRequest(
-            request.ticket,
-            request.confirmation,
-            ReceiverProfile(request.profile.name, request.profile.avatarB64),
-            ReceiverConfig(request.config.chunkSize, request.config.parallelStreams)
-        )
+        val request =
+            ReceiveFilesRequest(
+                request.ticket,
+                request.confirmation,
+                ReceiverProfile(request.profile.name, request.profile.avatarB64),
+                ReceiverConfig(request.config.chunkSize, request.config.parallelStreams),
+            )
         val nativeBubble = dev.arkbuilders.drop.receiveFiles(request)
         return DropReceiveFilesBubbleImpl(nativeBubble)
     }

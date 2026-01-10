@@ -11,13 +11,15 @@ import java.io.ByteArrayOutputStream
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-class DropReceiveFilesSubscriberImpl(val native: ReceiveFilesSubscriberImpl): DropReceiveFilesSubscriber {
+class DropReceiveFilesSubscriberImpl(
+    val native: ReceiveFilesSubscriberImpl,
+) : DropReceiveFilesSubscriber {
     override val progress: StateFlow<DropReceivingProgress> = native.progress
 
     override fun getCompleteFiles() = native.getCompleteFiles()
 }
 
-class ReceiveFilesSubscriberImpl: ReceiveFilesSubscriber {
+class ReceiveFilesSubscriberImpl : ReceiveFilesSubscriber {
     companion object {
         private const val TAG = "ReceiveFilesSubscriber"
     }
@@ -153,8 +155,8 @@ class ReceiveFilesSubscriberImpl: ReceiveFilesSubscriber {
     fun areAllFilesComplete(): Boolean {
         val currentProgress = _progress.value
         return currentProgress.files.isNotEmpty() &&
-                currentProgress.files.all { file ->
-                    currentProgress.fileProgress[file.id]?.isComplete == true
-                }
+            currentProgress.files.all { file ->
+                currentProgress.fileProgress[file.id]?.isComplete == true
+            }
     }
 }

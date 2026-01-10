@@ -50,9 +50,7 @@ import dev.arkbuilders.drop.domain.model.TransferType
 import dev.arkbuilders.drop.domain.repository.TransferSessionRepo
 import dev.arkbuilders.drop.presentation.components.AvatarImageWithFallback
 import dev.arkbuilders.drop.presentation.components.DropTopBarBack
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format
-import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.koinInject
 import org.orbitmvi.orbit.compose.collectAsState
 import java.time.Duration
@@ -60,7 +58,6 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlin.time.toJavaInstant
@@ -124,7 +121,7 @@ fun History(
                     Text(
                         text =
                             "Your sent and received files will appear" +
-                                    " here with details about each transfer.",
+                                " here with details about each transfer.",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.3,
@@ -165,7 +162,7 @@ fun History(
             text = {
                 Text(
                     "Are you sure you want to clear all transfer history?" +
-                            " This action cannot be undone.",
+                        " This action cannot be undone.",
                     style = MaterialTheme.typography.bodyLarge,
                 )
             },

@@ -22,7 +22,7 @@ class SendSessionRepoImpl(
     private val sendUseCase: SendFilesUseCase,
     private val resourcesHelper: ResourcesHelper,
     private val transferSessionRepository: TransferSessionRepo,
-): SendSessionRepo {
+) : SendSessionRepo {
     // Keep references to active sessions here so file transfers continue even if the ViewModel dies
     private val activeSessions = mutableListOf<SendSession>()
     private val activeSessionsMutex = Mutex()
