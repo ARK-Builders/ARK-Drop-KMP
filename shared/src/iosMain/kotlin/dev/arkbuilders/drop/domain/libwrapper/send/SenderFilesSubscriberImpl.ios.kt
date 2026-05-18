@@ -3,6 +3,7 @@ package dev.arkbuilders.drop.domain.libwrapper.send
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import platform.Foundation.NSLog
 import platform.Foundation.NSUUID
 
 class DropSendFilesSubscriberImpl(val native: SendFilesSubscriberImpl) : DropSendFilesSubscriber {
@@ -22,8 +23,7 @@ class SendFilesSubscriberImpl {
     fun getId(): String = id
 
     fun log(message: String) {
-        // On iOS, we can use NSLog or a logging framework
-        // For now, empty implementation as requested
+        NSLog("[ArkDrop-Send] $message")
     }
 
     // Note: These methods are called via the adapter from the bridge

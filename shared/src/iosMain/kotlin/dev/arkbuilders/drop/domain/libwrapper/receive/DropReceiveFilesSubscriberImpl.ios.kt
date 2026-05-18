@@ -31,8 +31,7 @@ class ReceiveFilesSubscriberImpl {
     fun getId(): String = id
 
     fun log(message: String) {
-        // On iOS, we can use NSLog or a logging framework
-        // For now, empty implementation as requested
+        NSLog("[ArkDrop-Receive] $message")
     }
 
     fun reset() {
