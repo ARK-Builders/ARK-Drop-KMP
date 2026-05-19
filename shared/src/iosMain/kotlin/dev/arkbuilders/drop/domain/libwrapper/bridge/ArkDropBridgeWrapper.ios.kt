@@ -16,7 +16,8 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import platform.Foundation.*
 import platform.darwin.NSObject
-import kotlin.coroutines.resumeWith
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * Wrapper for ArkDrop Objective-C bridge
@@ -57,13 +58,13 @@ object ArkDropBridgeWrapper {
             ) { bubble, error ->
                 if (error != null) {
                     print("[ArkDropBridge] Failed to send files: ${error.localizedDescription}")
-                    cont.resumeWith(Result.failure(Exception("Failed to send files: ${error.localizedDescription}")))
+                    cont.resumeWithException(Exception("Failed to send files: ${error.localizedDescription}"))
                 } else if (bubble != null) {
                     print("[ArkDropBridge] sendFiles callback succeeded")
-                    cont.resumeWith(Result.success(ArkDropSendFilesBubbleWrapper(bubble)))
+                    cont.resume(ArkDropSendFilesBubbleWrapper(bubble))
                 } else {
                     print("[ArkDropBridge] Failed to send files: null bubble and null error")
-                    cont.resumeWith(Result.failure(Exception("Failed to send files: unknown error")))
+                    cont.resumeWithException(Exception("Failed to send files: unknown error"))
                 }
             }
         }
