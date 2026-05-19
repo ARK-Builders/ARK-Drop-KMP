@@ -6,13 +6,13 @@
 + (void)sendFilesWithRequest:(ArkDropSendFilesRequest *)request
                   completion:(void (^)(id<ArkDropSendFilesBubble> _Nullable, NSError * _Nullable))completion;
 
-+ (void)sendFilesWithRequest:(ArkDropSendFilesRequest *)request
-                       bubble:(id<ArkDropSendFilesBubble> _Nullable __autoreleasing * _Nonnull)bubble
-                        error:(NSError * _Nullable __autoreleasing * _Nullable)error;
++ (void)sendFilesBlockingWithRequest:(ArkDropSendFilesRequest *)request
+                              bubble:(id<ArkDropSendFilesBubble> _Nullable __autoreleasing * _Nonnull)bubble
+                               error:(NSError * _Nullable __autoreleasing * _Nullable)error;
 
 + (void)receiveFilesWithRequest:(ArkDropReceiveFilesRequest *)request
-                          bubble:(id<ArkDropReceiveFilesBubble> _Nullable __autoreleasing * _Nonnull)bubble
-                           error:(NSError * _Nullable __autoreleasing * _Nullable)error;
+                           bubble:(id<ArkDropReceiveFilesBubble> _Nullable __autoreleasing * _Nonnull)bubble
+                            error:(NSError * _Nullable __autoreleasing * _Nullable)error;
 @end
 
 NS_ASSUME_NONNULL_BEGIN
@@ -115,11 +115,11 @@ NS_ASSUME_NONNULL_BEGIN
     [ArkDropBridgeSwift sendFilesWithRequest:request completion:completion];
 }
 
-+ (void)sendFilesWithRequest:(ArkDropSendFilesRequest *)request
-                       bubble:(id<ArkDropSendFilesBubble> _Nullable * _Nonnull)bubble
-                        error:(NSError * _Nullable * _Nullable)error {
++ (void)sendFilesBlockingWithRequest:(ArkDropSendFilesRequest *)request
+                              bubble:(id<ArkDropSendFilesBubble> _Nullable * _Nonnull)bubble
+                               error:(NSError * _Nullable * _Nullable)error {
     // Call Swift implementation
-    [ArkDropBridgeSwift sendFilesWithRequest:request bubble:bubble error:error];
+    [ArkDropBridgeSwift sendFilesBlockingWithRequest:request bubble:bubble error:error];
 }
 
 + (void)receiveFilesWithRequest:(ArkDropReceiveFilesRequest *)request

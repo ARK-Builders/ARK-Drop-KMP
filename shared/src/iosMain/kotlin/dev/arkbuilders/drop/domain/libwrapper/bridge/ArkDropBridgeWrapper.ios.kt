@@ -54,7 +54,7 @@ object ArkDropBridgeWrapper {
                 val bubblePtr = alloc<ObjCObjectVar<dev.arkbuilders.drop.bridge.ArkDropSendFilesBubbleProtocol?>>()
                 val errorPtr = alloc<ObjCObjectVar<NSError?>>()
 
-                dev.arkbuilders.drop.bridge.ArkDropBridge.sendFilesWithRequest(bridgeRequest, bubble = bubblePtr.ptr, error = errorPtr.ptr)
+                dev.arkbuilders.drop.bridge.ArkDropBridge.sendFilesBlockingWithRequest(bridgeRequest, bubble = bubblePtr.ptr, error = errorPtr.ptr)
 
                 val error = errorPtr.value
                 if (error != null) {

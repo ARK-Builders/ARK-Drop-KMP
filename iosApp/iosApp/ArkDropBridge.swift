@@ -35,9 +35,11 @@ import ArkDrop
     }
 
     /// Blocking sendFiles - kept for backward compatibility
-    @objc public static func sendFiles(withRequest request: ArkDropSendFilesRequest,
-                                        bubble: AutoreleasingUnsafeMutablePointer<ArkDropSendFilesBubble?>,
-                                        error: NSErrorPointer) {
+    @objc(sendFilesBlockingWithRequest:bubble:error:) public static func sendFiles(
+        withRequest request: ArkDropSendFilesRequest,
+        bubble: AutoreleasingUnsafeMutablePointer<ArkDropSendFilesBubble?>,
+        error: NSErrorPointer
+    ) {
         print("[ArkDropBridge] sendFiles (blocking) called, files count: \(request.files.count)")
         let semaphore = DispatchSemaphore(value: 0)
         var resultBubble: ArkDropSendFilesBubble?

@@ -113,9 +113,9 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)sendFilesWithRequest:(ArkDropSendFilesRequest *)request
                   completion:(void (^)(id<ArkDropSendFilesBubble> _Nullable bubble, NSError * _Nullable error))completion;
 
-+ (void)sendFilesWithRequest:(ArkDropSendFilesRequest *)request
-                       bubble:(id<ArkDropSendFilesBubble> _Nullable * _Nonnull)bubble
-                        error:(NSError * _Nullable * _Nullable)error;
++ (void)sendFilesBlockingWithRequest:(ArkDropSendFilesRequest *)request
+                              bubble:(id<ArkDropSendFilesBubble> _Nullable * _Nonnull)bubble
+                               error:(NSError * _Nullable * _Nullable)error;
 
 + (void)receiveFilesWithRequest:(ArkDropReceiveFilesRequest *)request
                           bubble:(id<ArkDropReceiveFilesBubble> _Nullable * _Nonnull)bubble
