@@ -263,13 +263,22 @@ class SendViewModel(
 
     private fun monitorTransferCompletion(session: SendSession) {
         viewModelScope.launch {
+            var checkCount = 0
             while (coroutineContext.isActive) {
                 val isFinished = session.bubble.isFinished()
+                val isConnected = session.bubble.isConnected()
+                checkCount++
+                Logger.d("monitorTransferCompletion check #$checkCount: isFinished=$isFinished, isConnected=$isConnected")
                 if (isFinished) {
+                    Logger.d("monitorTransferCompletion: transfer complete!")
                     onComplete()
                     break
                 }
                 delay(500)
+                if (checkCount >= 120) { // 60 seconds timeout
+                    Logger.d("monitorTransferCompletion: timeout after 60s")
+                    break
+                }
             }
         }
     }

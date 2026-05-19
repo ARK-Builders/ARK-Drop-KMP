@@ -47,8 +47,8 @@ class SendSessionRepoImpl(
                     val session = SendSession(bubble, subscriber)
                     activeSessionsMutex.withLock {
                         activeSessions.add(session)
+                        Logger.d("SendSessionRepo: Session created, isConnected=${bubble.isConnected()}, isFinished=${bubble.isFinished()}, activeSessions.size=${activeSessions.size}")
                     }
-                    Logger.d("SendSessionRepo: Session created, isConnected=${bubble.isConnected()}, isFinished=${bubble.isFinished()}")
                     return@withContext session
                 },
                 onFailure = {
@@ -91,18 +91,28 @@ class SendSessionRepoImpl(
         cancelScope.launch {
             try {
                 activeSessionsMutex.withLock {
-                    activeSessions.remove(session)
+                    val removed = activeSessions.remove(session)
+                    Logger.d("SendSessionRepo: cancelSend - session removed=$removed, activeSessions.size=${activeSessions.size}")
                 }
                 session.bubble.unsubscribe(session.subscriber)
+                Logger.d("SendSessionRepo: cancelSend - about to call bubble.cancel()")
                 session.bubble.cancel()
+                Logger.d("SendSessionRepo: cancelSend - bubble.cancel() completed")
             } catch (e: Throwable) {
-                Logger.e("Error cancelling send ${e.message}")
+                Logger.e("SendSessionRepo: Error cancelling send ${e.message}")
             }
         }
     }
 
     private suspend fun cleanupFinishedSessions() =
         activeSessionsMutex.withLock {
-            activeSessions.removeAll { it.bubble.isFinished() }
+            val before = activeSessions.size
+            activeSessions.removeAll { session ->
+                val finished = session.bubble.isFinished()
+                Logger.d("SendSessionRepo: cleanupFinishedSessions - isFinished=$finished, ticket=${session.bubble.getTicket()}")
+                finished
+            }
+            val removed = before - activeSessions.size
+            if (removed > 0) Logger.d("SendSessionRepo: cleanupFinishedSessions - removed $removed finished sessions")
         }
 }

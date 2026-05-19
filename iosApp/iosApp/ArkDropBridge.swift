@@ -158,6 +158,11 @@ private func convertToSwiftReceiveRequest(_ request: ArkDropReceiveFilesRequest)
     public init(bubble: SendFilesBubble) {
         self.bubble = bubble
         super.init()
+        print("[ArkDropBridge] ArkDropSendFilesBubbleImpl created, ticket=\(bubble.getTicket())")
+    }
+
+    deinit {
+        print("[ArkDropBridge] ArkDropSendFilesBubbleImpl DEINIT, isFinished=\(bubble.isFinished()), isConnected=\(bubble.isConnected())")
     }
     
     @objc(getTicket) public func getTicket() -> String {
@@ -169,8 +174,9 @@ private func convertToSwiftReceiveRequest(_ request: ArkDropReceiveFilesRequest)
     }
     
     @objc(cancelWithCompletion:) public func cancel(completion: @escaping ((any Error)?) -> Void) {
-        print("[ArkDropBridge] cancel called, isFinished=\(bubble.isFinished()), isConnected=\(bubble.isConnected())")
+        print("[ArkDropBridge] cancel called")
         Task {
+            print("[ArkDropBridge] cancel - inside Task, isFinished=\(bubble.isFinished()), isConnected=\(bubble.isConnected())")
             do {
                 try await bubble.cancel()
                 print("[ArkDropBridge] cancel completed")
@@ -183,11 +189,15 @@ private func convertToSwiftReceiveRequest(_ request: ArkDropReceiveFilesRequest)
     }
     
     @objc(isFinished) public func isFinished() -> Bool {
-        bubble.isFinished()
+        let isFinished = bubble.isFinished()
+        print("[ArkDropBridge] ArkDropSendFilesBubbleImpl isFinished=\(isFinished)")
+        isFinished
     }
     
     @objc(isConnected) public func isConnected() -> Bool {
-        bubble.isConnected()
+        let isConnected = bubble.isConnected()
+        print("[ArkDropBridge] ArkDropSendFilesBubbleImpl isConnected=\(isConnected)")
+        isConnected
     }
     
     @objc(getCreatedAt) public func getCreatedAt() -> String {
