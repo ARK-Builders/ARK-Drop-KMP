@@ -52,21 +52,10 @@ import ArkDrop
                 let swiftBubble = try await ArkDrop.sendFiles(request: swiftRequest)
                 let ticket = swiftBubble.getTicket()
                 print("[ArkDropBridge] ArkDrop.sendFiles succeeded, ticket=\(ticket), conf=\(swiftBubble.getConfirmation())")
-                // Try to decode ticket (NodeTicket format: node<base64url>)
+                // Log ticket analysis
                 if ticket.hasPrefix("node") {
-                    let encoded = String(ticket.dropFirst(4))
-                    // base64url -> base64
-                    let base64 = encoded
-                        .replacingOccurrences(of: "-", with: "+")
-                        .replacingOccurrences(of: "_", with: "/")
-                    let padded = base64 + String(repeating: "=", count: (4 - base64.count % 4) % 4)
-                    if let ticketData = Data(base64Encoded: padded) {
-                        print("[ArkDropBridge] Ticket decoded length: \(ticketData.count) bytes")
-                        print("[ArkDropBridge] Ticket bytes hex: \(ticketData.map { String(format: "%02x", $0) }.joined())")
-                        if let str = String(data: ticketData, encoding: .utf8) {
-                            print("[ArkDropBridge] Ticket as text: \(str.prefix(300))")
-                        }
-                    }
+                    print("[ArkDropBridge] Ticket has 'node' prefix, raw length: \(ticket.count)")
+                    print("[ArkDropBridge] Full ticket: \(ticket)")
                 }
                 resultBubble = ArkDropSendFilesBubbleImpl(bubble: swiftBubble)
             } catch let err as NSError {
@@ -215,13 +204,13 @@ private func convertToSwiftReceiveRequest(_ request: ArkDropReceiveFilesRequest)
     @objc(isFinished) public func isFinished() -> Bool {
         let isFinished = bubble.isFinished()
         print("[ArkDropBridge] ArkDropSendFilesBubbleImpl isFinished=\(isFinished)")
-        isFinished
+        return isFinished
     }
     
     @objc(isConnected) public func isConnected() -> Bool {
         let isConnected = bubble.isConnected()
         print("[ArkDropBridge] ArkDropSendFilesBubbleImpl isConnected=\(isConnected)")
-        isConnected
+        return isConnected
     }
     
     @objc(getCreatedAt) public func getCreatedAt() -> String {
