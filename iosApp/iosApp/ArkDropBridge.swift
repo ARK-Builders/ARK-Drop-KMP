@@ -9,10 +9,36 @@ import ArkDrop
 
 // Bridge class for Objective-C interop
 @objc(ArkDropBridgeSwift) public class ArkDropBridgeSwift: NSObject {
+    /// Non-blocking sendFiles - calls completion on a background thread when done.
+    /// No thread is blocked during the async operation.
     @objc public static func sendFiles(withRequest request: ArkDropSendFilesRequest,
-                                       bubble: AutoreleasingUnsafeMutablePointer<ArkDropSendFilesBubble?>,
-                                       error: NSErrorPointer) {
-        NSLog("[ArkDropBridge] sendFiles called, files count: %ld", request.files.count)
+                                        completion: @escaping (ArkDropSendFilesBubble?, NSError?) -> Void) {
+        NSLog("[ArkDropBridge] sendFiles (callback) called, files count: %ld", request.files.count)
+        
+        Task {
+            do {
+                let swiftRequest = convertToSwiftSendRequest(request)
+                NSLog("[ArkDropBridge] Calling ArkDrop.sendFiles...")
+                let swiftBubble = try await ArkDrop.sendFiles(request: swiftRequest)
+                let ticket = swiftBubble.getTicket()
+                NSLog("[ArkDropBridge] ArkDrop.sendFiles succeeded, ticket=%@, conf=%hhu", ticket, swiftBubble.getConfirmation())
+                let bubbleImpl = ArkDropSendFilesBubbleImpl(bubble: swiftBubble)
+                completion(bubbleImpl, nil)
+            } catch let err as NSError {
+                NSLog("[ArkDropBridge] ArkDrop.sendFiles failed: %@", err.localizedDescription)
+                completion(nil, err)
+            } catch {
+                NSLog("[ArkDropBridge] ArkDrop.sendFiles failed: %@", String(describing: error))
+                completion(nil, NSError(domain: "ArkDropBridge", code: -1, userInfo: [NSLocalizedDescriptionKey: String(describing: error)]))
+            }
+        }
+    }
+
+    /// Blocking sendFiles - kept for backward compatibility
+    @objc public static func sendFiles(withRequest request: ArkDropSendFilesRequest,
+                                        bubble: AutoreleasingUnsafeMutablePointer<ArkDropSendFilesBubble?>,
+                                        error: NSErrorPointer) {
+        NSLog("[ArkDropBridge] sendFiles (blocking) called, files count: %ld", request.files.count)
         let semaphore = DispatchSemaphore(value: 0)
         var resultBubble: ArkDropSendFilesBubble?
         var resultError: NSError?

@@ -11,8 +11,11 @@ import dev.arkbuilders.drop.domain.libwrapper.send.DropSendFilesSubscriber
 import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSendFilesRequest
 import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderFileData
 import kotlinx.cinterop.*
+import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.*
 import platform.darwin.NSObject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * Wrapper for ArkDrop Objective-C bridge
@@ -47,24 +50,22 @@ object ArkDropBridgeWrapper {
             this.config = config
         }
 
-        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-            memScoped {
-                val bubblePtr = alloc<ObjCObjectVar<dev.arkbuilders.drop.bridge.ArkDropSendFilesBubbleProtocol?>>()
-                val errorPtr = alloc<ObjCObjectVar<NSError?>>()
-
-                dev.arkbuilders.drop.bridge.ArkDropBridge.sendFilesWithRequest(bridgeRequest, bubble = bubblePtr.ptr, error = errorPtr.ptr)
-
-                val error = errorPtr.value
+        return suspendCancellableCoroutine { cont ->
+            dev.arkbuilders.drop.bridge.ArkDropBridge.sendFilesWithRequest(bridgeRequest) { bubble, error ->
                 if (error != null) {
                     NSLog("[ArkDropBridge] Failed to send files: ${error.localizedDescription}")
-                    throw Exception("Failed to send files: ${error.localizedDescription}")
+                    cont.resumeWithException(Exception("Failed to send files: ${error.localizedDescription}"))
+                } else {
+                    val result = bubble ?: run {
+                        NSLog("[ArkDropBridge] Failed to create send bubble")
+                        cont.resumeWithException(Exception("Failed to create send bubble"))
+                        return@sendFilesWithRequest
+                    }
+                    cont.resume(ArkDropSendFilesBubbleWrapper(result))
                 }
-
-                val bubble = bubblePtr.value ?: run {
-                    NSLog("[ArkDropBridge] Failed to create send bubble")
-                    throw Exception("Failed to create send bubble")
-                }
-                ArkDropSendFilesBubbleWrapper(bubble)
+            }
+            cont.invokeOnCancellation {
+                // TODO: handle cancellation
             }
         }
     }
