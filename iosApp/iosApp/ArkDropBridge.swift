@@ -52,6 +52,22 @@ import ArkDrop
                 let swiftBubble = try await ArkDrop.sendFiles(request: swiftRequest)
                 let ticket = swiftBubble.getTicket()
                 print("[ArkDropBridge] ArkDrop.sendFiles succeeded, ticket=\(ticket), conf=\(swiftBubble.getConfirmation())")
+                // Try to decode ticket (NodeTicket format: node<base64url>)
+                if ticket.hasPrefix("node") {
+                    let encoded = String(ticket.dropFirst(4))
+                    // base64url -> base64
+                    let base64 = encoded
+                        .replacingOccurrences(of: "-", with: "+")
+                        .replacingOccurrences(of: "_", with: "/")
+                    let padded = base64 + String(repeating: "=", count: (4 - base64.count % 4) % 4)
+                    if let ticketData = Data(base64Encoded: padded) {
+                        print("[ArkDropBridge] Ticket decoded length: \(ticketData.count) bytes")
+                        print("[ArkDropBridge] Ticket bytes hex: \(ticketData.map { String(format: "%02x", $0) }.joined())")
+                        if let str = String(data: ticketData, encoding: .utf8) {
+                            print("[ArkDropBridge] Ticket as text: \(str.prefix(300))")
+                        }
+                    }
+                }
                 resultBubble = ArkDropSendFilesBubbleImpl(bubble: swiftBubble)
             } catch let err as NSError {
                 print("[ArkDropBridge] ArkDrop.sendFiles failed: \(err.localizedDescription)")
@@ -74,8 +90,9 @@ import ArkDrop
     }
     
     @objc public static func receiveFiles(withRequest request: ArkDropReceiveFilesRequest,
-                                          bubble: AutoreleasingUnsafeMutablePointer<ArkDropReceiveFilesBubble?>,
-                                          error: NSErrorPointer) {
+                                           bubble: AutoreleasingUnsafeMutablePointer<ArkDropReceiveFilesBubble?>,
+                                           error: NSErrorPointer) {
+        print("[ArkDropBridge] receiveFiles (blocking) called, ticket prefix: \(request.ticket.prefix(50)), conf: \(request.confirmation), profile: \(request.profile.name)")
         let semaphore = DispatchSemaphore(value: 0)
         var resultBubble: ArkDropReceiveFilesBubble?
         var resultError: NSError?
@@ -83,11 +100,15 @@ import ArkDrop
         Task {
             do {
                 let swiftRequest = convertToSwiftReceiveRequest(request)
+                print("[ArkDropBridge] Calling ArkDrop.receiveFiles...")
                 let swiftBubble = try await ArkDrop.receiveFiles(request: swiftRequest)
+                print("[ArkDropBridge] ArkDrop.receiveFiles succeeded")
                 resultBubble = ArkDropReceiveFilesBubbleImpl(bubble: swiftBubble)
             } catch let err as NSError {
+                print("[ArkDropBridge] ArkDrop.receiveFiles failed: \(err.localizedDescription)")
                 resultError = err
             } catch {
+                print("[ArkDropBridge] ArkDrop.receiveFiles failed: \(String(describing: error))")
                 resultError = NSError(domain: "ArkDropBridge", code: -1, userInfo: [NSLocalizedDescriptionKey: String(describing: error)])
             }
             semaphore.signal()
@@ -95,6 +116,7 @@ import ArkDrop
         
         // Wait for async operation to complete
         semaphore.wait()
+        print("[ArkDropBridge] receiveFiles returning, success=\(resultError == nil)")
         
         if let err = resultError {
             error?.pointee = err
