@@ -34,8 +34,13 @@ class SendSessionRepoImpl(
 
             sendUseCase.invoke(fileUris).fold(
                 onSuccess = { bubble ->
+                    val ticket = bubble.getTicket()
+                    val confirmation = bubble.getConfirmation()
+                    Logger.d("SendSessionRepo: Bubble received, ticket=$ticket, confirmation=$confirmation")
+
                     val subscriber =
                         getDropApi().createSendSubscriber().also { subscriber ->
+                            Logger.d("SendSessionRepo: Subscribing to bubble")
                             bubble.subscribe(subscriber)
                         }
 
@@ -43,9 +48,11 @@ class SendSessionRepoImpl(
                     activeSessionsMutex.withLock {
                         activeSessions.add(session)
                     }
+                    Logger.d("SendSessionRepo: Session created, isConnected=${bubble.isConnected()}, isFinished=${bubble.isFinished()}")
                     return@withContext session
                 },
                 onFailure = {
+                    Logger.e("SendSessionRepo: Failed to create send bubble")
                     return@withContext null
                 },
             )
