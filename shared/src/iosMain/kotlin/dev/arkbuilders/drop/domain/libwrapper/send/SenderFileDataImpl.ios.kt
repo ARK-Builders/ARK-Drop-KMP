@@ -24,41 +24,41 @@ class SenderFileDataImpl(
         if (isInitialized) return
 
         try {
-            NSLog("[SenderFileData] Initializing file: $uri")
+            print("[SenderFileData] Initializing file: $uri")
             
             // Try as file path first, then as URL string
             val url = NSURL.fileURLWithPath(uri) 
                 ?: NSURL.URLWithString(uri) 
                 ?: run {
-                    NSLog("[SenderFileData] Failed to create URL from: $uri")
+                    print("[SenderFileData] Failed to create URL from: $uri")
                     return
                 }
 
-            NSLog("[SenderFileData] Created URL: ${url.absoluteString}")
+            print("[SenderFileData] Created URL: ${url.absoluteString}")
 
             // Get file size
             val resourceValues = url.resourceValuesForKeys(listOf(NSURLFileSizeKey), null)
             resourceValues?.get(NSURLFileSizeKey)?.let {
                 totalLength = ((it as? NSNumber)?.longValue ?: 0L).toULong()
-                NSLog("[SenderFileData] File size: $totalLength bytes")
-            } ?: NSLog("[SenderFileData] Could not get file size")
+                print("[SenderFileData] File size: $totalLength bytes")
+            } ?: print("[SenderFileData] Could not get file size")
 
             // Open input stream
             inputStream = NSInputStream.inputStreamWithURL(url)
             inputStream?.open()
             
             val status = inputStream?.streamStatus
-            NSLog("[SenderFileData] Stream status: $status")
+            print("[SenderFileData] Stream status: $status")
             
             if (inputStream?.streamError != null) {
-                NSLog("[SenderFileData] Stream error: ${inputStream?.streamError?.localizedDescription}")
+                print("[SenderFileData] Stream error: ${inputStream?.streamError?.localizedDescription}")
                 return
             }
             
             isInitialized = true
-            NSLog("[SenderFileData] Successfully initialized")
+            print("[SenderFileData] Successfully initialized")
         } catch (e: Exception) {
-            NSLog("[SenderFileData] Failed to initialize file: $uri, error: $e")
+            print("[SenderFileData] Failed to initialize file: $uri, error: $e")
         }
     }
 
@@ -70,7 +70,7 @@ class SenderFileDataImpl(
     override fun read(): UByte? {
         initialize()
         if (!isInitialized) {
-            NSLog("[SenderFileData] read() - not initialized for $uri")
+            print("[SenderFileData] read() - not initialized for $uri")
             return null
         }
         return try {
@@ -85,7 +85,7 @@ class SenderFileDataImpl(
                 buffer[0]
             }
         } catch (e: Exception) {
-            NSLog("[SenderFileData] read() error for $uri: $e")
+            print("[SenderFileData] read() error for $uri: $e")
             null
         }
     }
@@ -93,7 +93,7 @@ class SenderFileDataImpl(
     override fun readChunk(size: Int): ByteArray {
         initialize()
         if (!isInitialized) {
-            NSLog("[SenderFileData] readChunk() - not initialized for $uri")
+            print("[SenderFileData] readChunk() - not initialized for $uri")
             return ByteArray(0)
         }
         return try {
@@ -108,7 +108,7 @@ class SenderFileDataImpl(
                 buffer.asByteArray().copyOf(bytesRead.toInt())
             }
         } catch (e: Exception) {
-            NSLog("[SenderFileData] readChunk() error for $uri: $e")
+            print("[SenderFileData] readChunk() error for $uri: $e")
             ByteArray(0)
         }
     }

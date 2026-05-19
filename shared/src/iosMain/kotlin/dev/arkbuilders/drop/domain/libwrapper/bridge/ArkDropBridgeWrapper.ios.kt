@@ -53,11 +53,11 @@ object ArkDropBridgeWrapper {
         return suspendCancellableCoroutine { cont ->
             dev.arkbuilders.drop.bridge.ArkDropBridge.sendFilesWithRequest(bridgeRequest) { bubble, error ->
                 if (error != null) {
-                    NSLog("[ArkDropBridge] Failed to send files: ${error.localizedDescription}")
+                    print("[ArkDropBridge] Failed to send files: ${error.localizedDescription}")
                     cont.resumeWithException(Exception("Failed to send files: ${error.localizedDescription}"))
                 } else {
                     val result = bubble ?: run {
-                        NSLog("[ArkDropBridge] Failed to create send bubble")
+                        print("[ArkDropBridge] Failed to create send bubble")
                         cont.resumeWithException(Exception("Failed to create send bubble"))
                         return@sendFilesWithRequest
                     }
@@ -97,12 +97,12 @@ object ArkDropBridgeWrapper {
 
                 val error = errorPtr.value
                 if (error != null) {
-                    NSLog("[ArkDropBridge] Failed to receive files: ${error.localizedDescription}")
+                    print("[ArkDropBridge] Failed to receive files: ${error.localizedDescription}")
                     throw Exception("Failed to receive files: ${error.localizedDescription}")
                 }
 
                 val bubble = bubblePtr.value ?: run {
-                    NSLog("[ArkDropBridge] Failed to create receive bubble")
+                    print("[ArkDropBridge] Failed to create receive bubble")
                     throw Exception("Failed to create receive bubble")
                 }
                 ArkDropReceiveFilesBubbleWrapper(bubble)
@@ -122,7 +122,7 @@ private class ArkDropSenderFileDataAdapter(
         return try {
             data.len()
         } catch (e: Exception) {
-            NSLog("[ArkDropBridge] SenderFileDataAdapter.len() error: $e")
+            print("[ArkDropBridge] SenderFileDataAdapter.len() error: $e")
             0u
         }
     }
@@ -132,7 +132,7 @@ private class ArkDropSenderFileDataAdapter(
             val byte = data.read()
             byte?.let { NSNumber.numberWithUnsignedChar(it) }
         } catch (e: Exception) {
-            NSLog("[ArkDropBridge] SenderFileDataAdapter.read() error: $e")
+            print("[ArkDropBridge] SenderFileDataAdapter.read() error: $e")
             null
         }
     }
@@ -144,7 +144,7 @@ private class ArkDropSenderFileDataAdapter(
                 NSData.dataWithBytes(pinned.addressOf(0), length = bytes.size.toULong())
             }
         } catch (e: Exception) {
-            NSLog("[ArkDropBridge] SenderFileDataAdapter.readChunk() error: $e")
+            print("[ArkDropBridge] SenderFileDataAdapter.readChunk() error: $e")
             // Return empty NSData on error
             NSData.data()
         }
@@ -215,7 +215,7 @@ private class ArkDropReceiveFilesBubbleWrapper(
             bubble.startWithError(errorPtr.ptr)
             val error = errorPtr.value
             if (error != null) {
-                NSLog("[ArkDropBridge] Failed to start receive: ${error.localizedDescription}")
+                print("[ArkDropBridge] Failed to start receive: ${error.localizedDescription}")
                 throw Exception("Failed to start receive: ${error.localizedDescription}")
             }
         }
@@ -282,7 +282,7 @@ private class ArkDropReceiveFilesSubscriberAdapter(
             }
             native.appendReceivedData(fileId, bytes)
         } catch (e: Exception) {
-            NSLog("[ArkDropBridge] ReceiveFilesSubscriberAdapter.notifyReceiving error: $e")
+            print("[ArkDropBridge] ReceiveFilesSubscriberAdapter.notifyReceiving error: $e")
         }
     }
 
@@ -313,7 +313,7 @@ private class ArkDropReceiveFilesSubscriberAdapter(
             files = fileInfos
             )
         } catch (e: Exception) {
-            NSLog("[ArkDropBridge] ReceiveFilesSubscriberAdapter.notifyConnecting error: $e")
+            print("[ArkDropBridge] ReceiveFilesSubscriberAdapter.notifyConnecting error: $e")
         }
     }
 }

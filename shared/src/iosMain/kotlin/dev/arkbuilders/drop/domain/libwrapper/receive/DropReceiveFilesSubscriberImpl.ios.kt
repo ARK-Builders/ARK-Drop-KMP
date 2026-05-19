@@ -31,7 +31,7 @@ class ReceiveFilesSubscriberImpl {
     fun getId(): String = id
 
     fun log(message: String) {
-        NSLog("[ArkDrop-Receive] $message")
+        print("[ArkDrop-Receive] $message")
     }
 
     fun reset() {
