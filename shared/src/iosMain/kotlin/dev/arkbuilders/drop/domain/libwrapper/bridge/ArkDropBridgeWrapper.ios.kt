@@ -47,25 +47,27 @@ object ArkDropBridgeWrapper {
             this.config = config
         }
 
-        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-            memScoped {
-                val bubblePtr = alloc<ObjCObjectVar<dev.arkbuilders.drop.bridge.ArkDropSendFilesBubbleProtocol?>>()
-                val errorPtr = alloc<ObjCObjectVar<NSError?>>()
+        return memScoped {
+            val bubblePtr = alloc<ObjCObjectVar<dev.arkbuilders.drop.bridge.ArkDropSendFilesBubbleProtocol?>>()
+            val errorPtr = alloc<ObjCObjectVar<NSError?>>()
 
-                dev.arkbuilders.drop.bridge.ArkDropBridge.sendFilesWithRequest(bridgeRequest, bubble = bubblePtr.ptr, error = errorPtr.ptr)
+            NSLog("[ArkDropBridge] Calling sendFilesWithRequest with ${files.size} files")
+            dev.arkbuilders.drop.bridge.ArkDropBridge.sendFilesWithRequest(bridgeRequest, bubble = bubblePtr.ptr, error = errorPtr.ptr)
+            NSLog("[ArkDropBridge] sendFilesWithRequest completed")
 
-                val error = errorPtr.value
-                if (error != null) {
-                    NSLog("[ArkDropBridge] Failed to send files: ${error.localizedDescription}")
-                    throw Exception("Failed to send files: ${error.localizedDescription}")
-                }
-
-                val bubble = bubblePtr.value ?: run {
-                    NSLog("[ArkDropBridge] Failed to create send bubble")
-                    throw Exception("Failed to create send bubble")
-                }
-                ArkDropSendFilesBubbleWrapper(bubble)
+            val error = errorPtr.value
+            if (error != null) {
+                NSLog("[ArkDropBridge] Failed to send files: ${error.localizedDescription}")
+                throw Exception("Failed to send files: ${error.localizedDescription}")
             }
+
+            val bubble = bubblePtr.value ?: run {
+                NSLog("[ArkDropBridge] Failed to create send bubble")
+                throw Exception("Failed to create send bubble")
+            }
+            val wrapper = ArkDropSendFilesBubbleWrapper(bubble)
+            NSLog("[ArkDropBridge] Send bubble created: ticket=${wrapper.getTicket()}, conf=${wrapper.getConfirmation()}")
+            wrapper
         }
     }
 
