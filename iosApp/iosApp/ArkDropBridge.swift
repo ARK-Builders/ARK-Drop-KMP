@@ -10,8 +10,9 @@ import ArkDrop
 // Bridge class for Objective-C interop
 @objc(ArkDropBridgeSwift) public class ArkDropBridgeSwift: NSObject {
     @objc public static func sendFiles(withRequest request: ArkDropSendFilesRequest,
-                                       bubble: AutoreleasingUnsafeMutablePointer<ArkDropSendFilesBubble?>,
+        bubble: AutoreleasingUnsafeMutablePointer<ArkDropSendFilesBubble?>,
                                        error: NSErrorPointer) {
+        print("[ArkDropBridge] sendFiles: files count=\(request.files.count)")
         let semaphore = DispatchSemaphore(value: 0)
         var resultBubble: ArkDropSendFilesBubble?
         var resultError: NSError?
@@ -19,11 +20,16 @@ import ArkDrop
         Task {
             do {
                 let swiftRequest = convertToSwiftSendRequest(request)
+                print("[ArkDropBridge] Calling ArkDrop.sendFiles...")
                 let swiftBubble = try await ArkDrop.sendFiles(request: swiftRequest)
+                let ticket = swiftBubble.getTicket()
+                print("[ArkDropBridge] ArkDrop.sendFiles succeeded: ticket=\(ticket), conf=\(swiftBubble.getConfirmation())")
                 resultBubble = ArkDropSendFilesBubbleImpl(bubble: swiftBubble)
             } catch let err as NSError {
+                print("[ArkDropBridge] ArkDrop.sendFiles failed (NSError): \(err.localizedDescription)")
                 resultError = err
             } catch {
+                print("[ArkDropBridge] ArkDrop.sendFiles failed: \(String(describing: error))")
                 resultError = NSError(domain: "ArkDropBridge", code: -1, userInfo: [NSLocalizedDescriptionKey: String(describing: error)])
             }
             semaphore.signal()
@@ -36,6 +42,7 @@ import ArkDrop
             error?.pointee = err
         } else {
             bubble.pointee = resultBubble
+            print("[ArkDropBridge] sendFiles returning bubble to caller")
         }
     }
     
@@ -126,6 +133,11 @@ private func convertToSwiftReceiveRequest(_ request: ArkDropReceiveFilesRequest)
     public init(bubble: SendFilesBubble) {
         self.bubble = bubble
         super.init()
+        print("[ArkDropBridge][ArkDropSendFilesBubbleImpl] init: ticket=\(bubble.getTicket())")
+    }
+
+    deinit {
+        print("[ArkDropBridge][ArkDropSendFilesBubbleImpl] DEINIT: isFinished=\(bubble.isFinished()), isConnected=\(bubble.isConnected())")
     }
     
     @objc(getTicket) public func getTicket() -> String {
@@ -137,22 +149,30 @@ private func convertToSwiftReceiveRequest(_ request: ArkDropReceiveFilesRequest)
     }
     
     @objc(cancelWithCompletion:) public func cancel(completion: @escaping ((any Error)?) -> Void) {
+        print("[ArkDropBridge][ArkDropSendFilesBubbleImpl] cancel called")
         Task {
+            print("[ArkDropBridge][ArkDropSendFilesBubbleImpl] cancel (inside Task): isFinished=\(bubble.isFinished()), isConnected=\(bubble.isConnected())")
             do {
                 try await bubble.cancel()
+                print("[ArkDropBridge][ArkDropSendFilesBubbleImpl] cancel (inside Task) completed")
                 completion(nil)
             } catch {
+                print("[ArkDropBridge][ArkDropSendFilesBubbleImpl] cancel (inside Task) failed: \(error.localizedDescription)")
                 completion(error)
             }
         }
     }
     
     @objc(isFinished) public func isFinished() -> Bool {
-        bubble.isFinished()
+        let isFinished = bubble.isFinished()
+        // print("[ArkDropBridge][ArkDropSendFilesBubbleImpl] isFinished: \(isFinished)")
+        return isFinished
     }
     
     @objc(isConnected) public func isConnected() -> Bool {
-        bubble.isConnected()
+        let isConnected = bubble.isConnected()
+        // print("[ArkDropBridge][ArkDropSendFilesBubbleImpl] isConnected: \(isConnected)")
+        return isConnected
     }
     
     @objc(getCreatedAt) public func getCreatedAt() -> String {
@@ -163,6 +183,7 @@ private func convertToSwiftReceiveRequest(_ request: ArkDropReceiveFilesRequest)
         with subscriber: ArkDropSendFilesSubscriber
     ) {
         let swiftSubscriber = ArkDropSendFilesSubscriberBridge(subscriber: subscriber)
+        print("[ArkDropBridge][ArkDropSendFilesBubbleImpl] subscribe: id=\(swiftSubscriber.getId())")
         bubble.subscribe(subscriber: swiftSubscriber)
     }
     
@@ -170,6 +191,7 @@ private func convertToSwiftReceiveRequest(_ request: ArkDropReceiveFilesRequest)
         with subscriber: ArkDropSendFilesSubscriber
     ) {
         let swiftSubscriber = ArkDropSendFilesSubscriberBridge(subscriber: subscriber)
+        print("[ArkDropBridge][ArkDropSendFilesBubbleImpl] unsubscribe: id=\(swiftSubscriber.getId())")
         bubble.unsubscribe(subscriber: swiftSubscriber)
     }
 }
@@ -268,16 +290,19 @@ private final class ArkDropSendFilesSubscriberBridge: SendFilesSubscriber, @unch
     }
     
     func log(message: String) {
+        print("[ArkDropBridge][ArkDropSendFilesSubscriberBridge] log: \(message)")
         subscriber.log(withMessage: message)
     }
     
     func notifySending(event: SendFilesSendingEvent) {
+        print("[ArkDropBridge][ArkDropSendFilesSubscriberBridge] notifySending: name=\(event.name), sent=\(event.sent), remaining=\(event.remaining)")
         subscriber.notifySending(withName: event.name,
                                  sent: event.sent,
                                  remaining: event.remaining)
     }
     
     func notifyConnecting(event: SendFilesConnectingEvent) {
+        print("[ArkDropBridge][ArkDropSendFilesSubscriberBridge] notifyConnecting: receiver=\(event.receiver.name)")
         subscriber.notifyConnecting(withReceiverName: event.receiver.name,
                                     receiverAvatarB64: event.receiver.avatarB64)
     }
