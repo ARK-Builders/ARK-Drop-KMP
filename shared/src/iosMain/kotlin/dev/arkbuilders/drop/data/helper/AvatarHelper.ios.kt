@@ -4,9 +4,17 @@ package dev.arkbuilders.drop.data.helper
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
-import platform.CoreGraphics.*
-import platform.Foundation.*
-import platform.UIKit.*
+import platform.CoreGraphics.CGRectMake
+import platform.CoreGraphics.CGSizeMake
+import platform.Foundation.NSData
+import platform.Foundation.NSURL
+import platform.Foundation.base64EncodedStringWithOptions
+import platform.Foundation.dataWithContentsOfURL
+import platform.UIKit.UIGraphicsBeginImageContextWithOptions
+import platform.UIKit.UIGraphicsEndImageContext
+import platform.UIKit.UIGraphicsGetImageFromCurrentImageContext
+import platform.UIKit.UIImage
+import platform.UIKit.UIImageJPEGRepresentation
 
 actual class AvatarHelper {
     actual fun uriToBase64(uri: String): String? {

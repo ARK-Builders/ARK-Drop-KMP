@@ -55,7 +55,12 @@ class SendViewModel(
                 val size = allFiles.sumOf { resourcesHelper.getFileSize(it) }
 
                 firebaseReporter.log(
-                    "SendViewModel: files validated - valid: ${validated.first.size}, skipped: ${validated.second}, total: ${allFiles.size}, totalSize: $size bytes, canStart: $canStartTransfer",
+                    "SendViewModel: files validated - " +
+                        "valid: ${validated.first.size}, " +
+                        "skipped: ${validated.second}, " +
+                        "total: ${allFiles.size}, " +
+                        "totalSize: $size bytes, " +
+                        "canStart: $canStartTransfer",
                 )
 
                 reduce {
@@ -72,7 +77,10 @@ class SendViewModel(
                 val newFiles = s.files - file
                 val size = newFiles.sumOf { resourcesHelper.getFileSize(it) }
                 firebaseReporter.log(
-                    "SendViewModel: file removed - name: $removedName, remaining: ${newFiles.size}, remainingSize: $size bytes",
+                    "SendViewModel: file removed - " +
+                        "name: $removedName, " +
+                        "remaining: ${newFiles.size}, " +
+                        "remainingSize: $size bytes",
                 )
                 reduce {
                     s.copy(files = newFiles, size = size)
@@ -93,7 +101,10 @@ class SendViewModel(
             firebaseReporter.setCustomKey("send_file_count", s.files.size.toString())
             firebaseReporter.setCustomKey("send_total_bytes", s.size.toString())
             firebaseReporter.log(
-                "SendViewModel: starting transfer - files: ${s.files.size}, totalSize: ${s.size} bytes, online: ${networkStatus.isOnline()}",
+                "SendViewModel: starting transfer - " +
+                    "files: ${s.files.size}, " +
+                    "totalSize: ${s.size} bytes, " +
+                    "online: ${networkStatus.isOnline()}",
             )
 
             reduce {
@@ -171,16 +182,21 @@ class SendViewModel(
                 when (s) {
                     is SendScreenState.WaitingForReceiver -> {
                         firebaseReporter.log(
-                            "SendViewModel: user cancelled while waiting - ticket: ${s.session.bubble.getTicket()}",
+                            "SendViewModel: user cancelled while waiting - " +
+                                "ticket: ${s.session.bubble.getTicket()}",
                         )
                         s.session
                     }
+
                     is SendScreenState.Transfer -> {
                         firebaseReporter.log(
-                            "SendViewModel: user cancelled during transfer - ticket: ${s.session.bubble.getTicket()}, fileName: ${s.currentFileName}",
+                            "SendViewModel: user cancelled during transfer - " +
+                                "ticket: ${s.session.bubble.getTicket()}, " +
+                                "fileName: ${s.currentFileName}",
                         )
                         s.session
                     }
+
                     else -> {
                         firebaseReporter.log(
                             "SendViewModel: cancel ignored - state: ${s::class.simpleName}",
@@ -216,7 +232,11 @@ class SendViewModel(
             if (s is SendScreenState.Transfer) {
                 val progress = s.session.subscriber.progress.value
                 firebaseReporter.log(
-                    "SendViewModel: transfer completed - receiver: ${s.receiverName}, files: ${s.files.size}, sent: ${progress.sent}, remaining: ${progress.remaining}",
+                    "SendViewModel: transfer completed - " +
+                        "receiver: ${s.receiverName}, " +
+                        "files: ${s.files.size}, " +
+                        "sent: ${progress.sent}, " +
+                        "remaining: ${progress.remaining}",
                 )
                 firebaseReporter.setCustomKey(
                     "send_completed_at",
@@ -263,7 +283,8 @@ class SendViewModel(
         intent {
             val s = state
             firebaseReporter.log(
-                "SendViewModel: user retrying after error - errorType: ${(s as? SendScreenState.Error)?.error}",
+                "SendViewModel: user retrying after error - " +
+                    "errorType: ${(s as? SendScreenState.Error)?.error}",
             )
 
             if (s is SendScreenState.Error) {
@@ -282,7 +303,9 @@ class SendViewModel(
             val size = validated.sumOf { resourcesHelper.getFileSize(it) }
 
             firebaseReporter.log(
-                "SendViewModel: retry with ${validated.size} valid files, canStart: $canStartTransfer",
+                "SendViewModel: retry with " +
+                    "${validated.size} valid files, " +
+                    "canStart: $canStartTransfer",
             )
 
             reduce {
@@ -332,7 +355,9 @@ class SendViewModel(
 
                     if (justConnected) {
                         firebaseReporter.log(
-                            "SendViewModel: receiver connected - name: ${progress.receiverName}, fileName: ${progress.fileName}",
+                            "SendViewModel: receiver connected - " +
+                                "name: ${progress.receiverName}, " +
+                                "fileName: ${progress.fileName}",
                         )
                     }
 
@@ -344,7 +369,10 @@ class SendViewModel(
                     if (fileReset || currentChunk > lastLoggedChunk) {
                         lastLoggedChunk = currentChunk
                         firebaseReporter.log(
-                            "SendViewModel: transfer progress - file: ${progress.fileName}, sent: ${progress.sent}, remaining: ${progress.remaining}",
+                            "SendViewModel: transfer progress - " +
+                                "file: ${progress.fileName}, " +
+                                "sent: ${progress.sent}, " +
+                                "remaining: ${progress.remaining}",
                         )
                     }
 
@@ -367,7 +395,8 @@ class SendViewModel(
                     }
                 } catch (e: Throwable) {
                     firebaseReporter.recordError(
-                        "SendViewModel: transfer progress error - ${e::class.simpleName}: ${e.message}",
+                        "SendViewModel: transfer progress error - " +
+                            "${e::class.simpleName}: ${e.message}",
                         e,
                     )
                     Logger.e("Transfer interrupted: ${e::class.simpleName} ${e.message}")

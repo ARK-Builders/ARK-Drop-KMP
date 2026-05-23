@@ -101,7 +101,8 @@ class ReceiveViewModel(
                     receiveSessionRepo.receiveFiles(ticket, confirmation)
                 if (session != null) {
                     firebaseReporter.log(
-                        "ReceiveViewModel: session created successfully, transitioning to Receiving",
+                        "ReceiveViewModel: " +
+                            "session created successfully, transitioning to Receiving",
                     )
                     reduce {
                         ReceiveScreenState.Receiving(
@@ -323,7 +324,11 @@ class ReceiveViewModel(
                             progress.fileProgress[file.id]?.isComplete == true
                         }
                     firebaseReporter.log(
-                        "ReceiveViewModel: progress connected=${progress.isConnected} sender=${progress.senderName} files=${progress.files.size} completed=$completedCount",
+                        "ReceiveViewModel: progress " +
+                            "connected=${progress.isConnected} " +
+                            "sender=${progress.senderName} " +
+                            "files=${progress.files.size} " +
+                            "completed=$completedCount",
                     )
 
                     val allFilesComplete =
@@ -335,7 +340,8 @@ class ReceiveViewModel(
                     if (allFilesComplete) {
                         // Small delay to ensure UI updates are visible
                         firebaseReporter.log(
-                            "ReceiveViewModel: all ${progress.files.size} files complete, saving...",
+                            "ReceiveViewModel: " +
+                                "all ${progress.files.size} files complete, saving...",
                         )
                         delay(1000)
                         try {
@@ -385,7 +391,8 @@ class ReceiveViewModel(
                     }
                 } else if (progress.isConnected) {
                     firebaseReporter.log(
-                        "ReceiveViewModel: connected to sender=${progress.senderName} waiting for files...",
+                        "ReceiveViewModel: connected to " +
+                            "sender=${progress.senderName} waiting for files...",
                     )
                 }
             }

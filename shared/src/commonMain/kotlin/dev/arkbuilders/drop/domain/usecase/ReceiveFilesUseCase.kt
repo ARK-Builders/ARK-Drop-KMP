@@ -55,7 +55,8 @@ class ReceiveFilesUseCase(
                     )
 
                 firebaseReporter.log(
-                    "ReceiveFilesUseCase: request created chunkSize=$chunkSize parallelStreams=$parallelStreams",
+                    "ReceiveFilesUseCase: request created " +
+                        "chunkSize=$chunkSize parallelStreams=$parallelStreams",
                 )
 
                 val bubble = getDropApi().receiveFiles(request)

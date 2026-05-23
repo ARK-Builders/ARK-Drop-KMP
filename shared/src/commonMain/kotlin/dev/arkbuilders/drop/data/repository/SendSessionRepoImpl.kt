@@ -34,7 +34,8 @@ class SendSessionRepoImpl(
         withContext(Dispatchers.IO) {
             val cleaned = cleanupFinishedSessions()
             firebaseReporter.log(
-                "SendSessionRepo: sendFiles called - files: ${fileUris.size}, cleaned sessions: $cleaned",
+                "SendSessionRepo: sendFiles called - " +
+                    "files: ${fileUris.size}, cleaned sessions: $cleaned",
             )
 
             sendUseCase.invoke(fileUris).fold(
@@ -48,7 +49,8 @@ class SendSessionRepoImpl(
                     val ticket = bubble.getTicket()
                     firebaseReporter.setCustomKey("send_ticket_$ticket", "active")
                     firebaseReporter.log(
-                        "SendSessionRepo: session created - ticket: $ticket, activeSessions: ${activeSessions.size + 1}",
+                        "SendSessionRepo: session created - " +
+                            "ticket: $ticket, activeSessions: ${activeSessions.size + 1}",
                     )
 
                     activeSessionsMutex.withLock {
@@ -83,7 +85,8 @@ class SendSessionRepoImpl(
 
             firebaseReporter.setCustomKey("send_receiver", receiverName)
             firebaseReporter.log(
-                "SendSessionRepo: transfer completed - receiver: $receiverName, sent: $totalSent, remaining: $totalRemaining",
+                "SendSessionRepo: transfer completed - " +
+                    "receiver: $receiverName, sent: $totalSent, remaining: $totalRemaining",
             )
 
             val filesInfo =
@@ -152,7 +155,8 @@ class SendSessionRepoImpl(
             val removed = before - activeSessions.size
             if (removed > 0) {
                 firebaseReporter.log(
-                    "SendSessionRepo: cleaned $removed finished sessions, ${activeSessions.size} remaining",
+                    "SendSessionRepo: cleaned $removed finished sessions, " +
+                        "${activeSessions.size} remaining",
                 )
             }
             removed

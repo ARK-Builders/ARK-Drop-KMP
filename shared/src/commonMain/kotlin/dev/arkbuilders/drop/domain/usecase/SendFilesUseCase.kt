@@ -26,10 +26,12 @@ class SendFilesUseCase(
                 Logger.d("Starting file send for ${fileUris.size} files")
                 firebaseReporter.setCustomKey("send_file_count", fileUris.size.toString())
                 firebaseReporter.log(
-                    "SendFilesUseCase: starting for ${fileUris.size} files: ${fileUris.joinToString {
-                            uri ->
-                        resourcesHelper.getFileName(uri) ?: uri
-                    }}",
+                    "SendFilesUseCase: starting for ${fileUris.size} " +
+                        "files: ${
+                            fileUris.joinToString { uri ->
+                                resourcesHelper.getFileName(uri) ?: uri
+                            }
+                        }",
                 )
 
                 val profile = profileRepo.profile.first()
@@ -39,7 +41,9 @@ class SendFilesUseCase(
                         avatarB64 = profile.avatar.base64.takeIf { it.isNotEmpty() },
                     )
                 firebaseReporter.log(
-                    "SendFilesUseCase: sender profile loaded - name: ${senderProfile.name}, hasAvatar: ${senderProfile.avatarB64 != null}",
+                    "SendFilesUseCase: sender profile loaded - " +
+                        "name: ${senderProfile.name}, " +
+                        "hasAvatar: ${senderProfile.avatarB64 != null}",
                 )
 
                 var skippedCount = 0
@@ -50,7 +54,8 @@ class SendFilesUseCase(
                             val fileData = resourcesHelper.mapToSenderFileData(uri)
                             val fileSize = resourcesHelper.getFileSize(uri)
                             firebaseReporter.log(
-                                "SendFilesUseCase: file added - name: $fileName, uri: $uri, size: $fileSize bytes",
+                                "SendFilesUseCase: file added - " +
+                                    "name: $fileName, uri: $uri, size: $fileSize bytes",
                             )
                             DropSenderFile(
                                 name = fileName,
@@ -59,7 +64,8 @@ class SendFilesUseCase(
                         } else {
                             Logger.w("Could not get filename for URI: $uri")
                             firebaseReporter.log(
-                                "SendFilesUseCase: file skipped - could not extract filename from URI: $uri",
+                                "SendFilesUseCase: file skipped - " +
+                                    "could not extract filename from URI: $uri",
                             )
                             skippedCount++
                             null
@@ -68,7 +74,8 @@ class SendFilesUseCase(
 
                 if (senderFiles.isEmpty()) {
                     firebaseReporter.recordError(
-                        "SendFilesUseCase: no valid files to send after processing ${fileUris.size} URIs, skipped: $skippedCount",
+                        "SendFilesUseCase: no valid files to send after processing " +
+                            "${fileUris.size} URIs, skipped: $skippedCount",
                     )
                     Logger.e("No valid files to send")
                     error("No valid files to send")
@@ -76,7 +83,8 @@ class SendFilesUseCase(
 
                 if (skippedCount > 0) {
                     firebaseReporter.log(
-                        "SendFilesUseCase: $skippedCount files skipped, ${senderFiles.size} files will be sent",
+                        "SendFilesUseCase: $skippedCount files skipped, " +
+                            "${senderFiles.size} files will be sent",
                     )
                 }
 
@@ -95,7 +103,10 @@ class SendFilesUseCase(
                             ),
                     )
                 firebaseReporter.log(
-                    "SendFilesUseCase: request built - files: ${senderFiles.size}, chunkSize: ${request.config?.chunkSize}, parallelStreams: ${request.config?.parallelStreams}",
+                    "SendFilesUseCase: request built - " +
+                        "files: ${senderFiles.size}, " +
+                        "chunkSize: ${request.config?.chunkSize}, " +
+                        "parallelStreams: ${request.config?.parallelStreams}",
                 )
 
                 val bubble: DropSendFilesBubble = getDropApi().sendFiles(request)
@@ -104,7 +115,10 @@ class SendFilesUseCase(
                 val confirmation = bubble.getConfirmation()
                 firebaseReporter.setCustomKey("send_ticket", ticket)
                 firebaseReporter.log(
-                    "SendFilesUseCase: bubble created - ticket: $ticket, confirmation: $confirmation, createdAt: ${bubble.getCreatedAt()}",
+                    "SendFilesUseCase: bubble created - " +
+                        "ticket: $ticket, " +
+                        "confirmation: $confirmation, " +
+                        "createdAt: ${bubble.getCreatedAt()}",
                 )
 
                 Logger.d(

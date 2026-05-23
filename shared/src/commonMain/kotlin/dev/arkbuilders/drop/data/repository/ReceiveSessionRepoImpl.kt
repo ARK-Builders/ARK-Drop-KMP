@@ -93,7 +93,8 @@ class ReceiveSessionRepoImpl(
             try {
                 completeFiles.forEach { (fileInfo, data) ->
                     firebaseReporter.log(
-                        "ReceiveSessionRepo: saving file name=${fileInfo.name} size=${fileInfo.size}",
+                        "ReceiveSessionRepo: " +
+                            "saving file name=${fileInfo.name} size=${fileInfo.size}",
                     )
                     val savedFile = resourcesHelper.saveFileToDownloads(fileInfo.name, data)
                     if (savedFile != null) {
@@ -115,7 +116,8 @@ class ReceiveSessionRepoImpl(
 
                 if (savedFiles.isNotEmpty()) {
                     firebaseReporter.log(
-                        "ReceiveSessionRepo: adding completed transfer to history files=${savedFiles.size} sender=$senderName",
+                        "ReceiveSessionRepo: adding completed transfer to history " +
+                            "files=${savedFiles.size} sender=$senderName",
                     )
 
                     transferHistoryRepository.addReceivedTransfer(

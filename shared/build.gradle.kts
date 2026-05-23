@@ -67,7 +67,8 @@ kotlin {
                     "cinteropArkDropBridge${iosTarget.name.replaceFirstChar { it.uppercase() }}",
                 )
                 dependsOn(
-                    "cinteropCrashlyticsBridge${iosTarget.name.replaceFirstChar { it.uppercase() }}",
+                    "cinteropCrashlyticsBridge" +
+                        iosTarget.name.replaceFirstChar { it.uppercase() },
                 )
             }
         }
