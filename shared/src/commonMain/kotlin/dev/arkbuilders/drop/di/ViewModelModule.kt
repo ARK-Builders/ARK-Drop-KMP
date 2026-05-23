@@ -14,6 +14,6 @@ val viewModelModule =
         viewModel { HistoryViewModel(get()) }
         viewModel { HomeViewModel(get(), get(), get()) }
         viewModel { EditProfileViewModel(get(), get()) }
-        viewModel { ReceiveViewModel(get(), get(), get()) }
+        viewModel { ReceiveViewModel(get(), get(), get<FirebaseReporter>()) }
         viewModel { SendViewModel(get(), get(), get(), get<FirebaseReporter>()) }
     }
