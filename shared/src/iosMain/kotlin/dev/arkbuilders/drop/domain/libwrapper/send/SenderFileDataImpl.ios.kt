@@ -7,9 +7,9 @@ import dev.arkbuilders.drop.bridge.crashlytics_log
 import dev.arkbuilders.drop.bridge.crashlytics_recordError
 import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderFileData
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.reinterpret
+import kotlinx.cinterop.usePinned
 import platform.Foundation.*
 
 class SenderFileDataImpl(
@@ -31,13 +31,14 @@ class SenderFileDataImpl(
 
         try {
             // Try as file path first, then as URL string
-            val url = NSURL.fileURLWithPath(uri)
-                ?: NSURL.URLWithString(uri)
-                ?: run {
-                    println("⚠️ SenderFileDataImpl: Failed to create URL from: $uri")
-                    crashlytics_recordError("SenderFileDataImpl: failed to create URL from: $uri", null)
-                    return
-                }
+            val url =
+                NSURL.fileURLWithPath(uri)
+                    ?: NSURL.URLWithString(uri)
+                    ?: run {
+                        println("⚠️ SenderFileDataImpl: Failed to create URL from: $uri")
+                        crashlytics_recordError("SenderFileDataImpl: failed to create URL from: $uri", null)
+                        return
+                    }
 
             println("📁 SenderFileDataImpl: Created URL: ${url.absoluteString}")
 
@@ -61,7 +62,10 @@ class SenderFileDataImpl(
             if (inputStream?.streamError != null) {
                 val errorDesc = inputStream?.streamError?.localizedDescription ?: "unknown"
                 println("⚠️ SenderFileDataImpl: Stream error: $errorDesc")
-                crashlytics_recordError("SenderFileDataImpl: stream error for: $uri - $errorDesc", null)
+                crashlytics_recordError(
+                    "SenderFileDataImpl: stream error for: $uri - $errorDesc",
+                    null,
+                )
                 return
             }
 
@@ -89,12 +93,15 @@ class SenderFileDataImpl(
         }
         return try {
             val buffer = UByteArray(1)
-            val bytesRead = buffer.usePinned { pinned ->
-                inputStream?.read(pinned.addressOf(0).reinterpret(), maxLength = 1u)?.toLong() ?: 0L
-            }
+            val bytesRead =
+                buffer.usePinned { pinned ->
+                    inputStream?.read(pinned.addressOf(0).reinterpret(), maxLength = 1u)?.toLong() ?: 0L
+                }
             if (bytesRead == 0L) {
                 inputStream?.close()
-                crashlytics_log("SenderFileDataImpl: read() reached end of file, stream closed: $uri")
+                crashlytics_log(
+                    "SenderFileDataImpl: read() reached end of file, stream closed: $uri",
+                )
                 null
             } else {
                 buffer[0]
@@ -110,26 +117,37 @@ class SenderFileDataImpl(
         initialize()
         if (!isInitialized) {
             println("⚠️ SenderFileDataImpl.readChunk() - not initialized for $uri")
-            crashlytics_recordError("SenderFileDataImpl.readChunk() - not initialized for: $uri", null)
+            crashlytics_recordError(
+                "SenderFileDataImpl.readChunk() - not initialized for: $uri",
+                null,
+            )
             return ByteArray(0)
         }
         return try {
             val buffer = UByteArray(size)
-            val bytesRead = buffer.usePinned { pinned ->
-                inputStream?.read(pinned.addressOf(0).reinterpret(), maxLength = size.toULong())?.toLong() ?: 0L
-            }
+            val bytesRead =
+                buffer.usePinned { pinned ->
+                    inputStream?.read(pinned.addressOf(0).reinterpret(), maxLength = size.toULong())?.toLong() ?: 0L
+                }
             if (bytesRead == 0L) {
                 inputStream?.close()
-                crashlytics_log("SenderFileDataImpl: readChunk() reached end of file, stream closed: $uri")
+                crashlytics_log(
+                    "SenderFileDataImpl: readChunk() reached end of file, stream closed: $uri",
+                )
                 ByteArray(0)
             } else {
                 val result = buffer.asByteArray().copyOf(bytesRead.toInt())
-                crashlytics_log("SenderFileDataImpl: readChunk() - requested: $size, read: $bytesRead bytes for: $uri")
+                crashlytics_log(
+                    "SenderFileDataImpl: readChunk() - requested: $size, read: $bytesRead bytes for: $uri",
+                )
                 result
             }
         } catch (e: Exception) {
             println("⚠️ SenderFileDataImpl.readChunk() error for $uri: $e")
-            crashlytics_recordError("SenderFileDataImpl.readChunk() error for: $uri, size: $size", e.message)
+            crashlytics_recordError(
+                "SenderFileDataImpl.readChunk() error for: $uri, size: $size",
+                e.message,
+            )
             ByteArray(0)
         }
     }

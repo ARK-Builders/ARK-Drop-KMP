@@ -3,12 +3,12 @@
 package dev.arkbuilders.drop.domain.libwrapper.send
 
 import dev.arkbuilders.drop.bridge.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
+import platform.darwin.NSObject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import platform.darwin.NSObject
 
 class DropSendFilesBubbleImpl(
     private val bubble: ArkDropSendFilesBubbleProtocol,
@@ -19,7 +19,10 @@ class DropSendFilesBubbleImpl(
             suspendCancellableCoroutine { cont ->
                 bubble.cancelWithCompletion { error ->
                     if (error != null) {
-                        crashlytics_recordError("DropSendFilesBubble: cancel failed error=${error.localizedDescription}", null)
+                        crashlytics_recordError(
+                            "DropSendFilesBubble: cancel failed error=${error.localizedDescription}",
+                            null,
+                        )
                         cont.resumeWithException(Exception(error.localizedDescription))
                     } else {
                         crashlytics_log("DropSendFilesBubble: cancel completed")
@@ -82,11 +85,12 @@ class DropSendFilesBubbleImpl(
  * Adapter that wraps DropSendFilesSubscriber to implement ArkDropSendFilesSubscriber protocol
  */
 private class ArkDropSendFilesSubscriberAdapter(
-    private val subscriber: DropSendFilesSubscriber
+    private val subscriber: DropSendFilesSubscriber,
 ) : NSObject(), ArkDropSendFilesSubscriberProtocol {
-    private val native = (subscriber as? DropSendFilesSubscriberImpl)
-        ?.native as? SendFilesSubscriberImpl
-        ?: throw IllegalArgumentException("Invalid subscriber type")
+    private val native =
+        (subscriber as? DropSendFilesSubscriberImpl)
+            ?.native as? SendFilesSubscriberImpl
+            ?: throw IllegalArgumentException("Invalid subscriber type")
 
     override fun getId(): String = native.getId()
 
@@ -94,12 +98,21 @@ private class ArkDropSendFilesSubscriberAdapter(
         native.log(message)
     }
 
-    override fun notifySendingWithName(name: String, sent: ULong, remaining: ULong) {
-        crashlytics_log("ArkDropSendFilesSubscriberAdapter: sending progress name=$name sent=$sent remaining=$remaining")
+    override fun notifySendingWithName(
+        name: String,
+        sent: ULong,
+        remaining: ULong,
+    ) {
+        crashlytics_log(
+            "ArkDropSendFilesSubscriberAdapter: sending progress name=$name sent=$sent remaining=$remaining",
+        )
         native.updateSendingProgress(name, sent, remaining)
     }
 
-    override fun notifyConnectingWithReceiverName(receiverName: String, receiverAvatarB64: String?) {
+    override fun notifyConnectingWithReceiverName(
+        receiverName: String,
+        receiverAvatarB64: String?,
+    ) {
         crashlytics_log("ArkDropSendFilesSubscriberAdapter: connecting to receiver=$receiverName")
         native.updateConnectionStatus(receiverName, receiverAvatarB64)
     }

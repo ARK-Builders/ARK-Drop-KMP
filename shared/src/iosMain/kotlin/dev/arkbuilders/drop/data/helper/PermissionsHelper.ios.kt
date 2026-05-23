@@ -4,8 +4,8 @@ package dev.arkbuilders.drop.data.helper
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.AVFoundation.*
-actual class PermissionsHelper {
 
+actual class PermissionsHelper {
     actual fun isCameraGranted(): Boolean {
         return when (
             AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeVideo)

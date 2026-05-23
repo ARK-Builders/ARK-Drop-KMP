@@ -5,7 +5,10 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 actual class FirebaseReporter {
     private val instance = FirebaseCrashlytics.getInstance()
 
-    actual fun recordError(message: String, throwable: Throwable?) {
+    actual fun recordError(
+        message: String,
+        throwable: Throwable?,
+    ) {
         if (throwable != null) {
             instance.recordException(throwable)
         } else {
@@ -17,7 +20,10 @@ actual class FirebaseReporter {
         instance.log(message)
     }
 
-    actual fun setCustomKey(key: String, value: String) {
+    actual fun setCustomKey(
+        key: String,
+        value: String,
+    ) {
         instance.setCustomKey(key, value)
     }
 

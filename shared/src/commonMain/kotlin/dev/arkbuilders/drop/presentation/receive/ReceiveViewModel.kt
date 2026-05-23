@@ -80,13 +80,17 @@ class ReceiveViewModel(
             try {
                 val s = state
                 if (s !is ReceiveScreenState.QRCodeScanned) {
-                    firebaseReporter.log("ReceiveViewModel: onAccept ignored - not in QRCodeScanned state")
+                    firebaseReporter.log(
+                        "ReceiveViewModel: onAccept ignored - not in QRCodeScanned state",
+                    )
                     return@intent
                 }
                 val ticket = s.ticket
                 val confirmation = s.confirmation
 
-                firebaseReporter.log("ReceiveViewModel: accept triggered ticket=$ticket confirmation=$confirmation")
+                firebaseReporter.log(
+                    "ReceiveViewModel: accept triggered ticket=$ticket confirmation=$confirmation",
+                )
 
                 reduce {
                     ReceiveScreenState.Connecting
@@ -96,7 +100,9 @@ class ReceiveViewModel(
                 val session =
                     receiveSessionRepo.receiveFiles(ticket, confirmation)
                 if (session != null) {
-                    firebaseReporter.log("ReceiveViewModel: session created successfully, transitioning to Receiving")
+                    firebaseReporter.log(
+                        "ReceiveViewModel: session created successfully, transitioning to Receiving",
+                    )
                     reduce {
                         ReceiveScreenState.Receiving(
                             session,
@@ -105,7 +111,10 @@ class ReceiveViewModel(
                     }
                     listenToProgress(session)
                 } else {
-                    firebaseReporter.recordError("ReceiveViewModel: receiveFiles returned null session", null)
+                    firebaseReporter.recordError(
+                        "ReceiveViewModel: receiveFiles returned null session",
+                        null,
+                    )
                     reduce {
                         ReceiveScreenState.Error(error = ReceiveError.ConnectionFailed)
                     }
@@ -185,7 +194,9 @@ class ReceiveViewModel(
                 return@intent
 
             if (!clipText.isNullOrEmpty()) {
-                firebaseReporter.log("ReceiveViewModel: pasting from clipboard length=${clipText.length}")
+                firebaseReporter.log(
+                    "ReceiveViewModel: pasting from clipboard length=${clipText.length}",
+                )
                 reduce {
                     s.copy(
                         inputText = clipText,
@@ -219,7 +230,9 @@ class ReceiveViewModel(
         ticket: String,
         confirmation: UByte,
     ) = intent {
-        firebaseReporter.log("ReceiveViewModel: QR code scanned ticket=$ticket confirmation=$confirmation")
+        firebaseReporter.log(
+            "ReceiveViewModel: QR code scanned ticket=$ticket confirmation=$confirmation",
+        )
         reduce {
             ReceiveScreenState.QRCodeScanned(ticket, confirmation)
         }
@@ -270,7 +283,9 @@ class ReceiveViewModel(
             firebaseReporter.log("ReceiveViewModel: manual input submitted input=${s.inputText}")
             val parsed = parseManualInput(s.inputText)
             if (parsed != null) {
-                firebaseReporter.log("ReceiveViewModel: manual input parsed successfully ticket=${parsed.first}")
+                firebaseReporter.log(
+                    "ReceiveViewModel: manual input parsed successfully ticket=${parsed.first}",
+                )
                 reduce {
                     ReceiveScreenState.QRCodeScanned(
                         ticket = parsed.first,
@@ -303,10 +318,13 @@ class ReceiveViewModel(
 
                 if (progress.isConnected && progress.files.isNotEmpty()) {
                     // Check if all files are complete
-                    val completedCount = progress.files.count { file ->
-                        progress.fileProgress[file.id]?.isComplete == true
-                    }
-                    firebaseReporter.log("ReceiveViewModel: progress connected=${progress.isConnected} sender=${progress.senderName} files=${progress.files.size} completed=$completedCount")
+                    val completedCount =
+                        progress.files.count { file ->
+                            progress.fileProgress[file.id]?.isComplete == true
+                        }
+                    firebaseReporter.log(
+                        "ReceiveViewModel: progress connected=${progress.isConnected} sender=${progress.senderName} files=${progress.files.size} completed=$completedCount",
+                    )
 
                     val allFilesComplete =
                         progress.files.all { file ->
@@ -316,12 +334,16 @@ class ReceiveViewModel(
 
                     if (allFilesComplete) {
                         // Small delay to ensure UI updates are visible
-                        firebaseReporter.log("ReceiveViewModel: all ${progress.files.size} files complete, saving...")
+                        firebaseReporter.log(
+                            "ReceiveViewModel: all ${progress.files.size} files complete, saving...",
+                        )
                         delay(1000)
                         try {
                             val savedFiles = receiveSessionRepo.saveReceivedFiles(session)
                             if (savedFiles.isNotEmpty()) {
-                                firebaseReporter.log("ReceiveViewModel: saved ${savedFiles.size} files successfully")
+                                firebaseReporter.log(
+                                    "ReceiveViewModel: saved ${savedFiles.size} files successfully",
+                                )
                                 reduce {
                                     ReceiveScreenState.Success(
                                         session = session,
@@ -329,7 +351,10 @@ class ReceiveViewModel(
                                     )
                                 }
                             } else {
-                                firebaseReporter.recordError("ReceiveViewModel: no files received", null)
+                                firebaseReporter.recordError(
+                                    "ReceiveViewModel: no files received",
+                                    null,
+                                )
                                 reduce {
                                     ReceiveScreenState.Error(
                                         session = session,
@@ -359,7 +384,9 @@ class ReceiveViewModel(
                         }
                     }
                 } else if (progress.isConnected) {
-                    firebaseReporter.log("ReceiveViewModel: connected to sender=${progress.senderName} waiting for files...")
+                    firebaseReporter.log(
+                        "ReceiveViewModel: connected to sender=${progress.senderName} waiting for files...",
+                    )
                 }
             }
         }.launchIn(viewModelScope)

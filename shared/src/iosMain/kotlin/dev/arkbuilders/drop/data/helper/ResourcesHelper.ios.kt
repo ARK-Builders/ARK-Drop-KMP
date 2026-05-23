@@ -4,24 +4,25 @@ package dev.arkbuilders.drop.data.helper
 
 import dev.arkbuilders.drop.bridge.crashlytics_log
 import dev.arkbuilders.drop.bridge.crashlytics_recordError
-import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderFileData
 import dev.arkbuilders.drop.domain.libwrapper.send.SenderFileDataImpl
+import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderFileData
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.usePinned
-import kotlinx.cinterop.useContents
 import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.useContents
+import kotlinx.cinterop.usePinned
+import platform.CoreGraphics.*
+import platform.CoreImage.*
 import platform.Foundation.*
 import platform.UIKit.*
-import platform.CoreImage.*
-import platform.CoreGraphics.*
 import kotlin.IllegalArgumentException
 
 actual class ResourcesHelper {
     actual fun getFileName(uri: String): String? {
         return try {
-            val url = NSURL.fileURLWithPath(uri)
-                ?: NSURL.URLWithString(uri)
-                ?: return null
+            val url =
+                NSURL.fileURLWithPath(uri)
+                    ?: NSURL.URLWithString(uri)
+                    ?: return null
             val name = url.lastPathComponent
             crashlytics_log("ResourcesHelper: getFileName - uri: $uri -> name: $name")
             name
@@ -40,9 +41,13 @@ actual class ResourcesHelper {
                 val size = getFileSize(uri)
                 if (size in 1..2_000_000_000L) { // 2GB limit
                     validFiles.add(uri)
-                    crashlytics_log("ResourcesHelper: validateUris - valid: $uri, size: $size bytes")
+                    crashlytics_log(
+                        "ResourcesHelper: validateUris - valid: $uri, size: $size bytes",
+                    )
                 } else {
-                    crashlytics_log("ResourcesHelper: validateUris - skipped (size out of range): $uri, size: $size")
+                    crashlytics_log(
+                        "ResourcesHelper: validateUris - skipped (size out of range): $uri, size: $size",
+                    )
                     skippedCount++
                 }
             } catch (_: Exception) {
@@ -51,15 +56,18 @@ actual class ResourcesHelper {
             }
         }
 
-        crashlytics_log("ResourcesHelper: validateUris complete - valid: ${validFiles.size}, skipped: $skippedCount")
+        crashlytics_log(
+            "ResourcesHelper: validateUris complete - valid: ${validFiles.size}, skipped: $skippedCount",
+        )
         return validFiles to skippedCount
     }
 
     actual fun getFileSize(uri: String): Long {
         return try {
-            val url = NSURL.fileURLWithPath(uri)
-                ?: NSURL.URLWithString(uri)
-                ?: return 0L
+            val url =
+                NSURL.fileURLWithPath(uri)
+                    ?: NSURL.URLWithString(uri)
+                    ?: return 0L
             val resourceValues = url.resourceValuesForKeys(listOf(NSURLFileSizeKey), null)
             resourceValues?.get(NSURLFileSizeKey)?.let {
                 (it as? NSNumber)?.longValue ?: 0L
@@ -74,36 +82,51 @@ actual class ResourcesHelper {
         data: ByteArray,
     ): String? {
         val uniqueName = getUniqueFileName(fileName)
-        crashlytics_log("ResourcesHelper: saveFileToDownloads - originalName=$fileName uniqueName=$uniqueName dataSize=${data.size}")
+        crashlytics_log(
+            "ResourcesHelper: saveFileToDownloads - originalName=$fileName uniqueName=$uniqueName dataSize=${data.size}",
+        )
 
         return try {
             val fileManager = NSFileManager.defaultManager
-            val documentsPath = fileManager.URLForDirectory(
-                directory = NSDocumentDirectory,
-                inDomain = NSUserDomainMask,
-                appropriateForURL = null,
-                create = true,
-                error = null
-            )
+            val documentsPath =
+                fileManager.URLForDirectory(
+                    directory = NSDocumentDirectory,
+                    inDomain = NSUserDomainMask,
+                    appropriateForURL = null,
+                    create = true,
+                    error = null,
+                )
             if (documentsPath == null) {
-                crashlytics_recordError("ResourcesHelper: saveFileToDownloads - failed to get documents directory", null)
+                crashlytics_recordError(
+                    "ResourcesHelper: saveFileToDownloads - failed to get documents directory",
+                    null,
+                )
                 return null
             }
 
             val fileURL = documentsPath.URLByAppendingPathComponent(uniqueName)
             if (fileURL == null) {
-                crashlytics_recordError("ResourcesHelper: saveFileToDownloads - failed to create file URL", null)
+                crashlytics_recordError(
+                    "ResourcesHelper: saveFileToDownloads - failed to create file URL",
+                    null,
+                )
                 return null
             }
 
-            val nsData = data.usePinned { pinned ->
-                NSData.dataWithBytes(pinned.addressOf(0), data.size.toULong())
-            }
+            val nsData =
+                data.usePinned { pinned ->
+                    NSData.dataWithBytes(pinned.addressOf(0), data.size.toULong())
+                }
             val success = nsData.writeToURL(fileURL, atomically = true)
             if (success) {
-                crashlytics_log("ResourcesHelper: saveFileToDownloads - saved successfully path=$uniqueName")
+                crashlytics_log(
+                    "ResourcesHelper: saveFileToDownloads - saved successfully path=$uniqueName",
+                )
             } else {
-                crashlytics_recordError("ResourcesHelper: saveFileToDownloads - writeToURL returned false", null)
+                crashlytics_recordError(
+                    "ResourcesHelper: saveFileToDownloads - writeToURL returned false",
+                    null,
+                )
             }
 
             uniqueName
@@ -117,7 +140,9 @@ actual class ResourcesHelper {
         ticket: String,
         confirmation: UByte,
     ): ByteArray? {
-        crashlytics_log("ResourcesHelper: generateQRCode - ticket: $ticket, confirmation: $confirmation")
+        crashlytics_log(
+            "ResourcesHelper: generateQRCode - ticket: $ticket, confirmation: $confirmation",
+        )
         return try {
             if (ticket.isEmpty()) {
                 crashlytics_recordError("ResourcesHelper: generateQRCode - empty ticket", null)
@@ -134,7 +159,10 @@ actual class ResourcesHelper {
             // Scale up the QR code for better quality
             val outputImage = filter?.outputImage
             if (outputImage == null) {
-                crashlytics_recordError("ResourcesHelper: generateQRCode - CIFilter returned nil outputImage", null)
+                crashlytics_recordError(
+                    "ResourcesHelper: generateQRCode - CIFilter returned nil outputImage",
+                    null,
+                )
                 return null
             }
 
@@ -150,18 +178,24 @@ actual class ResourcesHelper {
             val uiImage = UIImage.imageWithCGImage(cgImage)
             val pngData = UIImagePNGRepresentation(uiImage)
 
-            val result = pngData?.let {
-                val length = it.length.toInt()
-                val bytes = ByteArray(length)
-                bytes.usePinned { pinned ->
-                    it.getBytes(pinned.addressOf(0), length = length.toULong())
+            val result =
+                pngData?.let {
+                    val length = it.length.toInt()
+                    val bytes = ByteArray(length)
+                    bytes.usePinned { pinned ->
+                        it.getBytes(pinned.addressOf(0), length = length.toULong())
+                    }
+                    crashlytics_log(
+                        "ResourcesHelper: generateQRCode - success, PNG size: $length bytes",
+                    )
+                    bytes
                 }
-                crashlytics_log("ResourcesHelper: generateQRCode - success, PNG size: $length bytes")
-                bytes
-            }
 
             if (result == null) {
-                crashlytics_recordError("ResourcesHelper: generateQRCode - PNG conversion returned nil", null)
+                crashlytics_recordError(
+                    "ResourcesHelper: generateQRCode - PNG conversion returned nil",
+                    null,
+                )
             }
 
             result
@@ -210,13 +244,14 @@ actual class ResourcesHelper {
     private fun doesFileExist(name: String): Boolean {
         return try {
             val fileManager = NSFileManager.defaultManager
-            val documentsPath = fileManager.URLForDirectory(
-                directory = NSDocumentDirectory,
-                inDomain = NSUserDomainMask,
-                appropriateForURL = null,
-                create = false,
-                error = null
-            ) ?: return false
+            val documentsPath =
+                fileManager.URLForDirectory(
+                    directory = NSDocumentDirectory,
+                    inDomain = NSUserDomainMask,
+                    appropriateForURL = null,
+                    create = false,
+                    error = null,
+                ) ?: return false
 
             val fileURL = documentsPath.URLByAppendingPathComponent(name)
             fileManager.fileExistsAtPath(fileURL?.path ?: "")

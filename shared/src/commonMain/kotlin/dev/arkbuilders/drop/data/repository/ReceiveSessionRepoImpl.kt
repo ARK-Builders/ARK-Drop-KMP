@@ -35,11 +35,15 @@ class ReceiveSessionRepoImpl(
         confirmation: UByte,
     ): ReceiveSession? =
         withContext(Dispatchers.IO) {
-            firebaseReporter.log("ReceiveSessionRepo: receiveFiles ticket=$ticket confirmation=$confirmation")
+            firebaseReporter.log(
+                "ReceiveSessionRepo: receiveFiles ticket=$ticket confirmation=$confirmation",
+            )
 
             receiveFilesUseCase.invoke(ticket, confirmation).fold(
                 onSuccess = { bubble ->
-                    firebaseReporter.log("ReceiveSessionRepo: use case returned bubble, creating subscriber")
+                    firebaseReporter.log(
+                        "ReceiveSessionRepo: use case returned bubble, creating subscriber",
+                    )
 
                     val subscriber =
                         getDropApi().createReceiveSubscriber().also { subscriber ->
@@ -53,16 +57,24 @@ class ReceiveSessionRepoImpl(
                         )
                     activeSessionsMutex.withLock {
                         activeSessions.add(session)
-                        firebaseReporter.setCustomKey("active_receive_count", activeSessions.size.toString())
+                        firebaseReporter.setCustomKey(
+                            "active_receive_count",
+                            activeSessions.size.toString(),
+                        )
                     }
 
                     firebaseReporter.log("ReceiveSessionRepo: starting bubble")
                     bubble.start()
-                    firebaseReporter.log("ReceiveSessionRepo: session created and started successfully")
+                    firebaseReporter.log(
+                        "ReceiveSessionRepo: session created and started successfully",
+                    )
                     return@withContext session
                 },
                 onFailure = { e ->
-                    firebaseReporter.recordError("ReceiveSessionRepo: receiveFiles failed ticket=$ticket", e)
+                    firebaseReporter.recordError(
+                        "ReceiveSessionRepo: receiveFiles failed ticket=$ticket",
+                        e,
+                    )
                     return@withContext null
                 },
             )
@@ -74,11 +86,15 @@ class ReceiveSessionRepoImpl(
             val completeFiles = subscriber.getCompleteFiles()
             val savedFiles = mutableListOf<DropFileInfo>()
 
-            firebaseReporter.log("ReceiveSessionRepo: saveReceivedFiles completeFiles=${completeFiles.size}")
+            firebaseReporter.log(
+                "ReceiveSessionRepo: saveReceivedFiles completeFiles=${completeFiles.size}",
+            )
 
             try {
                 completeFiles.forEach { (fileInfo, data) ->
-                    firebaseReporter.log("ReceiveSessionRepo: saving file name=${fileInfo.name} size=${fileInfo.size}")
+                    firebaseReporter.log(
+                        "ReceiveSessionRepo: saving file name=${fileInfo.name} size=${fileInfo.size}",
+                    )
                     val savedFile = resourcesHelper.saveFileToDownloads(fileInfo.name, data)
                     if (savedFile != null) {
                         savedFiles.add(DropFileInfo(savedFile, fileInfo.size.toLong()))
@@ -86,7 +102,10 @@ class ReceiveSessionRepoImpl(
                         firebaseReporter.log("ReceiveSessionRepo: file saved path=$savedFile")
                     } else {
                         Logger.e("Failed to save file: ${fileInfo.name}")
-                        firebaseReporter.recordError("ReceiveSessionRepo: failed to save file name=${fileInfo.name}", null)
+                        firebaseReporter.recordError(
+                            "ReceiveSessionRepo: failed to save file name=${fileInfo.name}",
+                            null,
+                        )
                     }
                 }
 
@@ -95,7 +114,9 @@ class ReceiveSessionRepoImpl(
                 val senderAvatar = progress.senderAvatar
 
                 if (savedFiles.isNotEmpty()) {
-                    firebaseReporter.log("ReceiveSessionRepo: adding completed transfer to history files=${savedFiles.size} sender=$senderName")
+                    firebaseReporter.log(
+                        "ReceiveSessionRepo: adding completed transfer to history files=${savedFiles.size} sender=$senderName",
+                    )
 
                     transferHistoryRepository.addReceivedTransfer(
                         files = savedFiles,
@@ -103,9 +124,13 @@ class ReceiveSessionRepoImpl(
                         peerAvatar = senderAvatar,
                         status = TransferStatus.COMPLETED,
                     )
-                    firebaseReporter.log("ReceiveSessionRepo: transfer history entry added successfully")
+                    firebaseReporter.log(
+                        "ReceiveSessionRepo: transfer history entry added successfully",
+                    )
                 } else {
-                    firebaseReporter.log("ReceiveSessionRepo: no files saved, adding failed transfer to history")
+                    firebaseReporter.log(
+                        "ReceiveSessionRepo: no files saved, adding failed transfer to history",
+                    )
 
                     transferHistoryRepository.addReceivedTransfer(
                         files = emptyList(),
@@ -130,7 +155,9 @@ class ReceiveSessionRepoImpl(
                 )
             }
 
-            firebaseReporter.log("ReceiveSessionRepo: saveReceivedFiles completed savedCount=${savedFiles.size}")
+            firebaseReporter.log(
+                "ReceiveSessionRepo: saveReceivedFiles completed savedCount=${savedFiles.size}",
+            )
             return@withContext savedFiles.map { it.name }
         }
 
@@ -140,7 +167,10 @@ class ReceiveSessionRepoImpl(
             try {
                 activeSessionsMutex.withLock {
                     activeSessions.remove(session)
-                    firebaseReporter.setCustomKey("active_receive_count", activeSessions.size.toString())
+                    firebaseReporter.setCustomKey(
+                        "active_receive_count",
+                        activeSessions.size.toString(),
+                    )
                 }
                 session.bubble.unsubscribe(session.subscriber)
                 session.bubble.cancel()

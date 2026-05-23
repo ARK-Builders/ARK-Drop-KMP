@@ -37,30 +37,38 @@ kotlin {
         iosTarget.compilations.getByName("main") {
             val iosAppPath = rootProject.projectDir.resolve("iosApp/iosApp")
 
-            val arkDropBridgeCinterop = cinterops.create("ArkDropBridge") {
-                defFile(project.file("src/nativeInterop/cinterop/ArkDropBridge.def"))
-                packageName("dev.arkbuilders.drop.bridge")
-                compilerOpts(
-                    "-framework", "Foundation",
-                    "-I${iosAppPath.absolutePath}"
-                )
-                includeDirs(iosAppPath.absolutePath)
-            }
+            val arkDropBridgeCinterop =
+                cinterops.create("ArkDropBridge") {
+                    defFile(project.file("src/nativeInterop/cinterop/ArkDropBridge.def"))
+                    packageName("dev.arkbuilders.drop.bridge")
+                    compilerOpts(
+                        "-framework",
+                        "Foundation",
+                        "-I${iosAppPath.absolutePath}",
+                    )
+                    includeDirs(iosAppPath.absolutePath)
+                }
 
-            val crashlyticsBridgeCinterop = cinterops.create("CrashlyticsBridge") {
-                defFile(project.file("src/nativeInterop/cinterop/CrashlyticsBridge.def"))
-                packageName("dev.arkbuilders.drop.bridge")
-                compilerOpts(
-                    "-framework", "Foundation",
-                    "-I${iosAppPath.absolutePath}"
-                )
-                includeDirs(iosAppPath.absolutePath)
-            }
+            val crashlyticsBridgeCinterop =
+                cinterops.create("CrashlyticsBridge") {
+                    defFile(project.file("src/nativeInterop/cinterop/CrashlyticsBridge.def"))
+                    packageName("dev.arkbuilders.drop.bridge")
+                    compilerOpts(
+                        "-framework",
+                        "Foundation",
+                        "-I${iosAppPath.absolutePath}",
+                    )
+                    includeDirs(iosAppPath.absolutePath)
+                }
 
             // Ensure cinterop runs before Kotlin compilation
             compileTaskProvider.configure {
-                dependsOn("cinteropArkDropBridge${iosTarget.name.replaceFirstChar { it.uppercase() }}")
-                dependsOn("cinteropCrashlyticsBridge${iosTarget.name.replaceFirstChar { it.uppercase() }}")
+                dependsOn(
+                    "cinteropArkDropBridge${iosTarget.name.replaceFirstChar { it.uppercase() }}",
+                )
+                dependsOn(
+                    "cinteropCrashlyticsBridge${iosTarget.name.replaceFirstChar { it.uppercase() }}",
+                )
             }
         }
 

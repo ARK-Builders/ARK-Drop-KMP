@@ -37,28 +37,39 @@ class SendFilesSubscriberImpl {
         _progress.value = DropSendingProgress()
         crashlytics_log("SendFilesSubscriber: reset completed")
     }
-    
+
     /**
      * Helper method to update sending progress directly (for bridge use)
      */
-    fun updateSendingProgress(fileName: String, sent: ULong, remaining: ULong) {
-        crashlytics_log("SendFilesSubscriber: updateSendingProgress fileName=$fileName sent=$sent remaining=$remaining")
-        _progress.value = _progress.value.copy(
-            fileName = fileName,
-            sent = sent,
-            remaining = remaining
+    fun updateSendingProgress(
+        fileName: String,
+        sent: ULong,
+        remaining: ULong,
+    ) {
+        crashlytics_log(
+            "SendFilesSubscriber: updateSendingProgress fileName=$fileName sent=$sent remaining=$remaining",
         )
+        _progress.value =
+            _progress.value.copy(
+                fileName = fileName,
+                sent = sent,
+                remaining = remaining,
+            )
     }
-    
+
     /**
      * Helper method to update connection status (for bridge use)
      */
-    fun updateConnectionStatus(receiverName: String, receiverAvatar: String?) {
+    fun updateConnectionStatus(
+        receiverName: String,
+        receiverAvatar: String?,
+    ) {
         crashlytics_log("SendFilesSubscriber: updateConnectionStatus receiverName=$receiverName")
-        _progress.value = _progress.value.copy(
-            isConnected = true,
-            receiverName = receiverName,
-            receiverAvatar = receiverAvatar
-        )
+        _progress.value =
+            _progress.value.copy(
+                isConnected = true,
+                receiverName = receiverName,
+                receiverAvatar = receiverAvatar,
+            )
     }
 }

@@ -8,7 +8,10 @@ import dev.arkbuilders.drop.bridge.crashlytics_setCustomKey
 import dev.arkbuilders.drop.bridge.crashlytics_setUserId
 
 actual class FirebaseReporter {
-    actual fun recordError(message: String, throwable: Throwable?) {
+    actual fun recordError(
+        message: String,
+        throwable: Throwable?,
+    ) {
         val stackTrace = throwable?.stackTraceToString()
         crashlytics_recordError(message, stackTrace)
     }
@@ -17,7 +20,10 @@ actual class FirebaseReporter {
         crashlytics_log(message)
     }
 
-    actual fun setCustomKey(key: String, value: String) {
+    actual fun setCustomKey(
+        key: String,
+        value: String,
+    ) {
         crashlytics_setCustomKey(key, value)
     }
 

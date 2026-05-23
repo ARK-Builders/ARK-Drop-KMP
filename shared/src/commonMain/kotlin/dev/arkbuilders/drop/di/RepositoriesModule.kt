@@ -19,7 +19,21 @@ val repositoriesModule =
         single { TransferSessionLocalDataSource(get()) }
 
         single<ProfileRepo> { ProfileRepoImpl(get()) }
-        single<SendSessionRepo> { SendSessionRepoImpl(get(), get(), get(), get<FirebaseReporter>()) }
-        single<ReceiveSessionRepo> { ReceiveSessionRepoImpl(get(), get(), get(), get<FirebaseReporter>()) }
+        single<SendSessionRepo> {
+            SendSessionRepoImpl(
+                get(),
+                get(),
+                get(),
+                get<FirebaseReporter>(),
+            )
+        }
+        single<ReceiveSessionRepo> {
+            ReceiveSessionRepoImpl(
+                get(),
+                get(),
+                get(),
+                get<FirebaseReporter>(),
+            )
+        }
         single<TransferSessionRepo> { TransferSessionRepoImpl(get()) }
     }

@@ -17,9 +17,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
+import org.orbitmvi.orbit.viewmodel.container
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
-import org.orbitmvi.orbit.viewmodel.container
 
 class SendViewModel(
     private val resourcesHelper: ResourcesHelper,
@@ -44,7 +44,9 @@ class SendViewModel(
         intent {
             val s = state
             if (s is SendScreenState.FileSelection) {
-                firebaseReporter.log("SendViewModel: files added - new: ${newFiles.size}, current: ${s.files.size}")
+                firebaseReporter.log(
+                    "SendViewModel: files added - new: ${newFiles.size}, current: ${s.files.size}",
+                )
 
                 val validated = resourcesHelper.validateUris(newFiles)
                 val allFiles = s.files + validated.first
@@ -52,7 +54,9 @@ class SendViewModel(
 
                 val size = allFiles.sumOf { resourcesHelper.getFileSize(it) }
 
-                firebaseReporter.log("SendViewModel: files validated - valid: ${validated.first.size}, skipped: ${validated.second}, total: ${allFiles.size}, totalSize: $size bytes, canStart: $canStartTransfer")
+                firebaseReporter.log(
+                    "SendViewModel: files validated - valid: ${validated.first.size}, skipped: ${validated.second}, total: ${allFiles.size}, totalSize: $size bytes, canStart: $canStartTransfer",
+                )
 
                 reduce {
                     s.copy(files = allFiles, size = size, canStartTransfer = canStartTransfer)
@@ -67,7 +71,9 @@ class SendViewModel(
                 val removedName = resourcesHelper.getFileName(file) ?: file
                 val newFiles = s.files - file
                 val size = newFiles.sumOf { resourcesHelper.getFileSize(it) }
-                firebaseReporter.log("SendViewModel: file removed - name: $removedName, remaining: ${newFiles.size}, remainingSize: $size bytes")
+                firebaseReporter.log(
+                    "SendViewModel: file removed - name: $removedName, remaining: ${newFiles.size}, remainingSize: $size bytes",
+                )
                 reduce {
                     s.copy(files = newFiles, size = size)
                 }
@@ -78,13 +84,17 @@ class SendViewModel(
         intent {
             val s = state
             if (s !is SendScreenState.FileSelection) {
-                firebaseReporter.log("SendViewModel: start transfer ignored - wrong state: ${s::class.simpleName}")
+                firebaseReporter.log(
+                    "SendViewModel: start transfer ignored - wrong state: ${s::class.simpleName}",
+                )
                 return@intent
             }
 
             firebaseReporter.setCustomKey("send_file_count", s.files.size.toString())
             firebaseReporter.setCustomKey("send_total_bytes", s.size.toString())
-            firebaseReporter.log("SendViewModel: starting transfer - files: ${s.files.size}, totalSize: ${s.size} bytes, online: ${networkStatus.isOnline()}")
+            firebaseReporter.log(
+                "SendViewModel: starting transfer - files: ${s.files.size}, totalSize: ${s.size} bytes, online: ${networkStatus.isOnline()}",
+            )
 
             reduce {
                 SendScreenState.GeneratingQR(s.files)
@@ -92,7 +102,9 @@ class SendViewModel(
 
             val session = sendSessionRepo.sendFiles(s.files)
             if (session == null) {
-                firebaseReporter.recordError("SendViewModel: session creation failed - could not initialize transfer")
+                firebaseReporter.recordError(
+                    "SendViewModel: session creation failed - could not initialize transfer",
+                )
                 reduce {
                     SendScreenState.Error(
                         files = s.files,
@@ -103,7 +115,9 @@ class SendViewModel(
             }
             val ticket = session.bubble.getTicket()
             val confirmation = session.bubble.getConfirmation()
-            firebaseReporter.log("SendViewModel: session created - ticket: $ticket, confirmation: $confirmation")
+            firebaseReporter.log(
+                "SendViewModel: session created - ticket: $ticket, confirmation: $confirmation",
+            )
 
             if (ticket.isEmpty()) {
                 firebaseReporter.recordError("SendViewModel: empty ticket received from bridge")
@@ -121,7 +135,9 @@ class SendViewModel(
             firebaseReporter.log("SendViewModel: generating QR code for ticket: $ticket")
             val qrBitmap = resourcesHelper.generateQRCode(ticket, confirmation)
             if (qrBitmap == null) {
-                firebaseReporter.recordError("SendViewModel: QR generation failed for ticket: $ticket")
+                firebaseReporter.recordError(
+                    "SendViewModel: QR generation failed for ticket: $ticket",
+                )
                 reduce {
                     SendScreenState.Error(
                         session = session,
@@ -131,7 +147,9 @@ class SendViewModel(
                 }
                 return@intent
             }
-            firebaseReporter.log("SendViewModel: QR code generated successfully - size: ${qrBitmap.size} bytes")
+            firebaseReporter.log(
+                "SendViewModel: QR code generated successfully - size: ${qrBitmap.size} bytes",
+            )
 
             listenToSendProgress(session)
             monitorTransferCompletion(session)
@@ -152,15 +170,21 @@ class SendViewModel(
             val session =
                 when (s) {
                     is SendScreenState.WaitingForReceiver -> {
-                        firebaseReporter.log("SendViewModel: user cancelled while waiting - ticket: ${s.session.bubble.getTicket()}")
+                        firebaseReporter.log(
+                            "SendViewModel: user cancelled while waiting - ticket: ${s.session.bubble.getTicket()}",
+                        )
                         s.session
                     }
                     is SendScreenState.Transfer -> {
-                        firebaseReporter.log("SendViewModel: user cancelled during transfer - ticket: ${s.session.bubble.getTicket()}, fileName: ${s.currentFileName}")
+                        firebaseReporter.log(
+                            "SendViewModel: user cancelled during transfer - ticket: ${s.session.bubble.getTicket()}, fileName: ${s.currentFileName}",
+                        )
                         s.session
                     }
                     else -> {
-                        firebaseReporter.log("SendViewModel: cancel ignored - state: ${s::class.simpleName}")
+                        firebaseReporter.log(
+                            "SendViewModel: cancel ignored - state: ${s::class.simpleName}",
+                        )
                         null
                     }
                 }
@@ -191,8 +215,13 @@ class SendViewModel(
             val s = state
             if (s is SendScreenState.Transfer) {
                 val progress = s.session.subscriber.progress.value
-                firebaseReporter.log("SendViewModel: transfer completed - receiver: ${s.receiverName}, files: ${s.files.size}, sent: ${progress.sent}, remaining: ${progress.remaining}")
-                firebaseReporter.setCustomKey("send_completed_at", Clock.System.now().toEpochMilliseconds().toString())
+                firebaseReporter.log(
+                    "SendViewModel: transfer completed - receiver: ${s.receiverName}, files: ${s.files.size}, sent: ${progress.sent}, remaining: ${progress.remaining}",
+                )
+                firebaseReporter.setCustomKey(
+                    "send_completed_at",
+                    Clock.System.now().toEpochMilliseconds().toString(),
+                )
 
                 sendSessionRepo.recordSendCompletion(
                     s.files,
@@ -233,7 +262,9 @@ class SendViewModel(
     fun onErrorRetry() =
         intent {
             val s = state
-            firebaseReporter.log("SendViewModel: user retrying after error - errorType: ${(s as? SendScreenState.Error)?.error}")
+            firebaseReporter.log(
+                "SendViewModel: user retrying after error - errorType: ${(s as? SendScreenState.Error)?.error}",
+            )
 
             if (s is SendScreenState.Error) {
                 s.session?.let {
@@ -250,7 +281,9 @@ class SendViewModel(
             val canStartTransfer = validated.isNotEmpty() && networkStatus.isOnline()
             val size = validated.sumOf { resourcesHelper.getFileSize(it) }
 
-            firebaseReporter.log("SendViewModel: retry with ${validated.size} valid files, canStart: $canStartTransfer")
+            firebaseReporter.log(
+                "SendViewModel: retry with ${validated.size} valid files, canStart: $canStartTransfer",
+            )
 
             reduce {
                 SendScreenState.FileSelection(
@@ -298,7 +331,9 @@ class SendViewModel(
                         return@intent
 
                     if (justConnected) {
-                        firebaseReporter.log("SendViewModel: receiver connected - name: ${progress.receiverName}, fileName: ${progress.fileName}")
+                        firebaseReporter.log(
+                            "SendViewModel: receiver connected - name: ${progress.receiverName}, fileName: ${progress.fileName}",
+                        )
                     }
 
                     val sent = progress.sent.toLong()
@@ -308,7 +343,9 @@ class SendViewModel(
                     val currentChunk = sent / chunkBytes
                     if (fileReset || currentChunk > lastLoggedChunk) {
                         lastLoggedChunk = currentChunk
-                        firebaseReporter.log("SendViewModel: transfer progress - file: ${progress.fileName}, sent: ${progress.sent}, remaining: ${progress.remaining}")
+                        firebaseReporter.log(
+                            "SendViewModel: transfer progress - file: ${progress.fileName}, sent: ${progress.sent}, remaining: ${progress.remaining}",
+                        )
                     }
 
                     val transfer =
@@ -329,7 +366,10 @@ class SendViewModel(
                         transfer
                     }
                 } catch (e: Throwable) {
-                    firebaseReporter.recordError("SendViewModel: transfer progress error - ${e::class.simpleName}: ${e.message}", e)
+                    firebaseReporter.recordError(
+                        "SendViewModel: transfer progress error - ${e::class.simpleName}: ${e.message}",
+                        e,
+                    )
                     Logger.e("Transfer interrupted: ${e::class.simpleName} ${e.message}")
                     reduce {
                         SendScreenState.Error(
@@ -351,7 +391,9 @@ class SendViewModel(
             while (coroutineContext.isActive) {
                 val isFinished = session.bubble.isFinished()
                 if (isFinished) {
-                    firebaseReporter.log("SendViewModel: transfer finished signal detected - ticket: $ticket")
+                    firebaseReporter.log(
+                        "SendViewModel: transfer finished signal detected - ticket: $ticket",
+                    )
                     onComplete()
                     break
                 }

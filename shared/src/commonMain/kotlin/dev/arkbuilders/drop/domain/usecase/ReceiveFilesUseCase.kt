@@ -24,7 +24,9 @@ class ReceiveFilesUseCase(
         withContext(Dispatchers.IO) {
             runCatching {
                 firebaseReporter.setCustomKey("receive_ticket", ticket)
-                firebaseReporter.log("ReceiveFilesUseCase: invoked with ticket=$ticket confirmation=$confirmation")
+                firebaseReporter.log(
+                    "ReceiveFilesUseCase: invoked with ticket=$ticket confirmation=$confirmation",
+                )
                 Logger.d("Starting file receive with ticket: $ticket")
 
                 val profile = profileRepo.profile.first()
@@ -37,8 +39,8 @@ class ReceiveFilesUseCase(
                     )
 
                 // Using UInt values, converted to ULong for the config
-                val chunkSize = 1024u * 512u  // UInt
-                val parallelStreams = 4u       // UInt
+                val chunkSize = 1024u * 512u // UInt
+                val parallelStreams = 4u // UInt
 
                 val request =
                     DropReceiveFilesRequest(
@@ -52,7 +54,9 @@ class ReceiveFilesUseCase(
                             ),
                     )
 
-                firebaseReporter.log("ReceiveFilesUseCase: request created chunkSize=$chunkSize parallelStreams=$parallelStreams")
+                firebaseReporter.log(
+                    "ReceiveFilesUseCase: request created chunkSize=$chunkSize parallelStreams=$parallelStreams",
+                )
 
                 val bubble = getDropApi().receiveFiles(request)
 

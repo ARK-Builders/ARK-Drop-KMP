@@ -34,7 +34,10 @@ class DropReceiveFilesBubbleImpl(
             bubble.startWithError(errorPtr.ptr)
             val error = errorPtr.value
             if (error != null) {
-                crashlytics_recordError("DropReceiveFilesBubble: start failed error=${error.localizedDescription}", null)
+                crashlytics_recordError(
+                    "DropReceiveFilesBubble: start failed error=${error.localizedDescription}",
+                    null,
+                )
                 throw Exception("Failed to start: ${error.localizedDescription}")
             }
         }
@@ -57,11 +60,12 @@ class DropReceiveFilesBubbleImpl(
 }
 
 private class ArkDropReceiveFilesSubscriberAdapter(
-    private val subscriber: DropReceiveFilesSubscriber
+    private val subscriber: DropReceiveFilesSubscriber,
 ) : NSObject(), ArkDropReceiveFilesSubscriberProtocol {
-    private val native = (subscriber as? DropReceiveFilesSubscriberImpl)
-        ?.native as? ReceiveFilesSubscriberImpl
-        ?: throw IllegalArgumentException("Invalid subscriber type")
+    private val native =
+        (subscriber as? DropReceiveFilesSubscriberImpl)
+            ?.native as? ReceiveFilesSubscriberImpl
+            ?: throw IllegalArgumentException("Invalid subscriber type")
 
     override fun getId(): String = native.getId()
 
@@ -69,9 +73,14 @@ private class ArkDropReceiveFilesSubscriberAdapter(
         native.log(message)
     }
 
-    override fun notifyReceivingWithFileId(fileId: String, data: NSData) {
+    override fun notifyReceivingWithFileId(
+        fileId: String,
+        data: NSData,
+    ) {
         val length = data.length.toInt()
-        crashlytics_log("ArkDropReceiveFilesSubscriberAdapter: receiving data fileId=$fileId bytes=$length")
+        crashlytics_log(
+            "ArkDropReceiveFilesSubscriberAdapter: receiving data fileId=$fileId bytes=$length",
+        )
         val bytes = ByteArray(length)
         bytes.usePinned { pinned ->
             data.getBytes(pinned.addressOf(0), length = length.toULong())
@@ -82,34 +91,42 @@ private class ArkDropReceiveFilesSubscriberAdapter(
     override fun notifyConnectingWithSenderName(
         senderName: String,
         senderAvatarB64: String?,
-        files: List<*>
+        files: List<*>,
     ) {
-        crashlytics_log("ArkDropReceiveFilesSubscriberAdapter: connected to sender=$senderName fileCount=${files.size}")
+        crashlytics_log(
+            "ArkDropReceiveFilesSubscriberAdapter: connected to sender=$senderName fileCount=${files.size}",
+        )
 
-        val fileInfos = files.mapNotNull { fileDict ->
-            val dict = fileDict as? Map<*, *> ?: return@mapNotNull null
-            val id = dict["id"] as? String ?: return@mapNotNull null
-            val name = dict["name"] as? String ?: return@mapNotNull null
-            val len = (dict["len"] as? Number)?.toLong()?.toULong() ?: return@mapNotNull null
+        val fileInfos =
+            files.mapNotNull { fileDict ->
+                val dict = fileDict as? Map<*, *> ?: return@mapNotNull null
+                val id = dict["id"] as? String ?: return@mapNotNull null
+                val name = dict["name"] as? String ?: return@mapNotNull null
+                val len = (dict["len"] as? Number)?.toLong()?.toULong() ?: return@mapNotNull null
 
-            ReceiveFileInfo(
-                id = id,
-                name = name,
-                size = len
+                ReceiveFileInfo(
+                    id = id,
+                    name = name,
+                    size = len,
+                )
+            }
+
+        crashlytics_log(
+            "ArkDropReceiveFilesSubscriberAdapter: parsed fileInfos count=${fileInfos.size}",
+        )
+        fileInfos.forEach { info ->
+            crashlytics_log(
+                "ArkDropReceiveFilesSubscriberAdapter: file id=${info.id} name=${info.name} size=${info.size}",
             )
         }
 
-        crashlytics_log("ArkDropReceiveFilesSubscriberAdapter: parsed fileInfos count=${fileInfos.size}")
-        fileInfos.forEach { info ->
-            crashlytics_log("ArkDropReceiveFilesSubscriberAdapter: file id=${info.id} name=${info.name} size=${info.size}")
-        }
-
         val currentProgress = native.progress.value
-        native._progress.value = currentProgress.copy(
-            isConnected = true,
-            senderName = senderName,
-            senderAvatar = senderAvatarB64,
-            files = fileInfos
-        )
+        native._progress.value =
+            currentProgress.copy(
+                isConnected = true,
+                senderName = senderName,
+                senderAvatar = senderAvatarB64,
+                files = fileInfos,
+            )
     }
 }

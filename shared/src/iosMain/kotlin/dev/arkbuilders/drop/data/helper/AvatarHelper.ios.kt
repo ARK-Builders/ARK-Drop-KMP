@@ -4,12 +4,11 @@ package dev.arkbuilders.drop.data.helper
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
+import platform.CoreGraphics.*
 import platform.Foundation.*
 import platform.UIKit.*
-import platform.CoreGraphics.*
 
 actual class AvatarHelper {
-
     actual fun uriToBase64(uri: String): String? {
         return try {
             val imageUrl = NSURL.URLWithString(uri) ?: return null
@@ -18,10 +17,11 @@ actual class AvatarHelper {
 
             val optimizedImage = optimizeImage(image) ?: return null
 
-            val jpegData = UIImageJPEGRepresentation(
-                optimizedImage,
-                JPEG_QUALITY / 100.0
-            ) ?: return null
+            val jpegData =
+                UIImageJPEGRepresentation(
+                    optimizedImage,
+                    JPEG_QUALITY / 100.0,
+                ) ?: return null
 
             if (jpegData.length.toULong() > MAX_FILE_SIZE) {
                 return null
@@ -34,15 +34,17 @@ actual class AvatarHelper {
     }
 
     private fun optimizeImage(image: UIImage): UIImage? {
-        val (width, height) = image.size.useContents {
-            Pair(width, height)
-        }
+        val (width, height) =
+            image.size.useContents {
+                Pair(width, height)
+            }
 
-        val scaleFactor = if (width > height) {
-            MAX_IMAGE_SIZE / width
-        } else {
-            MAX_IMAGE_SIZE / height
-        }
+        val scaleFactor =
+            if (width > height) {
+                MAX_IMAGE_SIZE / width
+            } else {
+                MAX_IMAGE_SIZE / height
+            }
 
         return if (scaleFactor < 1.0) {
             val newWidth = width * scaleFactor
@@ -69,6 +71,4 @@ actual class AvatarHelper {
         const val JPEG_QUALITY = 85.0
         const val MAX_FILE_SIZE: ULong = 512000uL // 500 KB (500 * 1024)
     }
-
 }
-

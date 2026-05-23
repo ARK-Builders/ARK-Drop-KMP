@@ -9,9 +9,9 @@ import dev.arkbuilders.drop.data.helper.AvatarHelper
 import dev.arkbuilders.drop.data.helper.NetworkStatus
 import dev.arkbuilders.drop.data.helper.PermissionsHelper
 import dev.arkbuilders.drop.data.helper.ResourcesHelper
-import dev.arkbuilders.drop.instrumentation.FirebaseReporter
 import dev.arkbuilders.drop.data.settings.DATASTORE_FILENAME
 import dev.arkbuilders.drop.data.settings.createDataStore
+import dev.arkbuilders.drop.instrumentation.FirebaseReporter
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
