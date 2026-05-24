@@ -299,18 +299,51 @@ jobs:
         env:
           IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
 
-      # 7️⃣b Decode GoogleService-Info.plist (Firebase config)
-      - name: Decode GoogleService-Info.plist
-        run: |
-          if [ -z "$GOOGLE_SERVICE_INFO_BASE64" ]; then
-            echo "❌ ERROR: GOOGLE_SERVICE_INFO_BASE64 secret is missing or empty!"
-            exit 1
-          fi
-          echo "$GOOGLE_SERVICE_INFO_BASE64" | base64 --decode > iosApp/iosApp/GoogleService-Info.plist
-          FILE_SIZE=$(stat -f%z iosApp/iosApp/GoogleService-Info.plist)
-          echo "✅ GoogleService-Info.plist created ($FILE_SIZE bytes)"
-        env:
-          GOOGLE_SERVICE_INFO_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_BASE64 }}
+- name: Decode and validate GoogleService-Info.plist
+  run: |
+    set -euo pipefail
+
+    PLIST_PATH="iosApp/iosApp/GoogleService-Info.plist"
+
+    if [ -z "${GOOGLE_SERVICE_INFO_BASE64:-}" ]; then
+      echo "❌ ERROR: GOOGLE_SERVICE_INFO_BASE64 secret is missing or empty"
+      exit 1
+    fi
+
+    echo "$GOOGLE_SERVICE_INFO_BASE64" | base64 -D > "$PLIST_PATH"
+
+    FILE_SIZE=$(stat -f%z "$PLIST_PATH")
+    echo "✅ GoogleService-Info.plist created ($FILE_SIZE bytes)"
+
+    if [ "$FILE_SIZE" -lt 100 ]; then
+      echo "❌ ERROR: GoogleService-Info.plist is too small, likely corrupted"
+      exit 1
+    fi
+
+    if ! plutil -lint "$PLIST_PATH"; then
+      echo "❌ ERROR: GoogleService-Info.plist is invalid"
+      exit 1
+    fi
+
+    for key in GOOGLE_APP_ID BUNDLE_ID API_KEY GCM_SENDER_ID PROJECT_ID; do
+      if ! /usr/libexec/PlistBuddy -c "Print :$key" "$PLIST_PATH" >/dev/null; then
+        echo "❌ ERROR: Missing plist key: $key"
+        exit 1
+      fi
+    done
+
+    PLIST_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :BUNDLE_ID" "$PLIST_PATH")
+
+    if [ "$PLIST_BUNDLE_ID" != "$APP_BUNDLE_ID" ]; then
+      echo "❌ ERROR: Firebase BUNDLE_ID mismatch"
+      echo "Expected: $APP_BUNDLE_ID"
+      echo "Actual:   $PLIST_BUNDLE_ID"
+      exit 1
+    fi
+
+    echo "✅ GoogleService-Info.plist validation passed"
+  env:
+    GOOGLE_SERVICE_INFO_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_BASE64 }}
 
       # 8️⃣ Setup App Store Connect API Key
       - name: Setup App Store Connect API Key
