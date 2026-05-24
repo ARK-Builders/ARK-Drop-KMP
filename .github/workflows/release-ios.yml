@@ -26,7 +26,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      # 1️⃣ Checkout code
+      # Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -108,7 +108,7 @@ jobs:
           IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
           ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
 
-      # 2️⃣ Setup Ruby and Fastlane
+      # Setup Ruby and Fastlane
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -118,7 +118,7 @@ jobs:
       - name: Install gems
         run: bundle install
 
-      # 3️⃣ Build Kotlin framework before Xcode (required for KMP - Xcode expects it at XCFrameworks/debug)
+      # Build Kotlin framework before Xcode (required for KMP - Xcode expects it at XCFrameworks/debug)
       - name: Build Kotlin framework for Release
         run: |
           export JAVA_HOME=$(/usr/libexec/java_home -v 17)
@@ -139,13 +139,13 @@ jobs:
             echo "✅ Info.plist already exists"
           fi
 
-      # 4️⃣ Setup Xcode 26.2 (macos-26 has it pre-installed)
+      # Setup Xcode 26.2 (macos-26 has it pre-installed)
       - name: Select Xcode version
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '26.2'
 
-      # 4️⃣ Decode certificate (Fastlane will import it)
+      # Decode certificate (Fastlane will import it)
       - name: Decode iOS certificate
         run: |
           # Check if the secret exists and is not empty
@@ -168,7 +168,7 @@ jobs:
         env:
           IOS_P12_BASE64: ${{ secrets.IOS_P12_BASE64 }}
 
-      # 6️⃣ Validate iOS certificate contains private key
+      # Validate iOS certificate contains private key
       - name: Validate iOS certificate contains private key
         run: |
           set +e  # Don't exit on openssl failure - we need to show the error
@@ -282,7 +282,7 @@ jobs:
         env:
           IOS_P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
 
-      # 7️⃣ Decode provisioning profile (Fastlane will install it)
+      # Decode provisioning profile (Fastlane will install it)
       - name: Decode provisioning profile
         run: |
           # Check if the secret exists
@@ -299,53 +299,54 @@ jobs:
         env:
           IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
 
-- name: Decode and validate GoogleService-Info.plist
-  run: |
-    set -euo pipefail
+      # Decode and validate Firebase config from Environment secrets
+      - name: Decode and validate GoogleService-Info.plist
+        run: |
+          set -euo pipefail
 
-    PLIST_PATH="iosApp/iosApp/GoogleService-Info.plist"
+          PLIST_PATH="iosApp/iosApp/GoogleService-Info.plist"
 
-    if [ -z "${GOOGLE_SERVICE_INFO_BASE64:-}" ]; then
-      echo "❌ ERROR: GOOGLE_SERVICE_INFO_BASE64 secret is missing or empty"
-      exit 1
-    fi
+          if [ -z "${GOOGLE_SERVICE_INFO_BASE64:-}" ]; then
+            echo "❌ ERROR: GOOGLE_SERVICE_INFO_BASE64 secret is missing or empty"
+            exit 1
+          fi
 
-    echo "$GOOGLE_SERVICE_INFO_BASE64" | base64 -D > "$PLIST_PATH"
+          echo "$GOOGLE_SERVICE_INFO_BASE64" | base64 -D > "$PLIST_PATH"
 
-    FILE_SIZE=$(stat -f%z "$PLIST_PATH")
-    echo "✅ GoogleService-Info.plist created ($FILE_SIZE bytes)"
+          FILE_SIZE=$(stat -f%z "$PLIST_PATH")
+          echo "✅ GoogleService-Info.plist created ($FILE_SIZE bytes)"
 
-    if [ "$FILE_SIZE" -lt 100 ]; then
-      echo "❌ ERROR: GoogleService-Info.plist is too small, likely corrupted"
-      exit 1
-    fi
+          if [ "$FILE_SIZE" -lt 100 ]; then
+            echo "❌ ERROR: GoogleService-Info.plist is too small, likely corrupted"
+            exit 1
+          fi
 
-    if ! plutil -lint "$PLIST_PATH"; then
-      echo "❌ ERROR: GoogleService-Info.plist is invalid"
-      exit 1
-    fi
+          if ! plutil -lint "$PLIST_PATH"; then
+            echo "❌ ERROR: GoogleService-Info.plist is invalid"
+            exit 1
+          fi
 
-    for key in GOOGLE_APP_ID BUNDLE_ID API_KEY GCM_SENDER_ID PROJECT_ID; do
-      if ! /usr/libexec/PlistBuddy -c "Print :$key" "$PLIST_PATH" >/dev/null; then
-        echo "❌ ERROR: Missing plist key: $key"
-        exit 1
-      fi
-    done
+          for key in GOOGLE_APP_ID BUNDLE_ID API_KEY GCM_SENDER_ID PROJECT_ID; do
+            if ! /usr/libexec/PlistBuddy -c "Print :$key" "$PLIST_PATH" >/dev/null; then
+              echo "❌ ERROR: Missing plist key: $key"
+              exit 1
+            fi
+          done
 
-    PLIST_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :BUNDLE_ID" "$PLIST_PATH")
+          PLIST_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :BUNDLE_ID" "$PLIST_PATH")
 
-    if [ "$PLIST_BUNDLE_ID" != "$APP_BUNDLE_ID" ]; then
-      echo "❌ ERROR: Firebase BUNDLE_ID mismatch"
-      echo "Expected: $APP_BUNDLE_ID"
-      echo "Actual:   $PLIST_BUNDLE_ID"
-      exit 1
-    fi
+          if [ "$PLIST_BUNDLE_ID" != "$APP_BUNDLE_ID" ]; then
+            echo "❌ ERROR: Firebase BUNDLE_ID mismatch"
+            echo "Expected: $APP_BUNDLE_ID"
+            echo "Actual:   $PLIST_BUNDLE_ID"
+            exit 1
+          fi
 
-    echo "✅ GoogleService-Info.plist validation passed"
-  env:
-    GOOGLE_SERVICE_INFO_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_BASE64 }}
+          echo "✅ GoogleService-Info.plist validation passed"
+        env:
+          GOOGLE_SERVICE_INFO_BASE64: ${{ secrets.GOOGLE_SERVICE_INFO_BASE64 }}
 
-      # 8️⃣ Setup App Store Connect API Key
+      # Setup App Store Connect API Key
       - name: Setup App Store Connect API Key
         run: |
           # Check if secrets exist
@@ -373,7 +374,7 @@ jobs:
         env:
           ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
 
-      # 8b Set build number (Config.xcconfig overrides agvtool; must be > previous TestFlight build)
+      # Set build number (Config.xcconfig overrides agvtool; must be > previous TestFlight build)
       - name: Set build number for TestFlight
         run: |
           BUILD_NUM=$(date +%s)
@@ -381,7 +382,7 @@ jobs:
           rm -f iosApp/Configuration/Config.xcconfig.bak
           echo "Set CURRENT_PROJECT_VERSION to $BUILD_NUM"
 
-      # 9️⃣ Build & Upload to TestFlight via Fastlane (includes verification inside)
+      # Build & Upload to TestFlight via Fastlane (includes verification inside)
       - name: Build & Upload to TestFlight
         run: bundle exec fastlane beta
         env:
@@ -389,7 +390,7 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
 
-      # 9️⃣ Upload build artifacts
+      # Upload build artifacts
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         if: success()
@@ -398,7 +399,7 @@ jobs:
           path: build/ARK-Drop.ipa
           retention-days: 30
       
-      # 📋 Show build errors if build failed
+      # Show build errors if build failed
       - name: Show Build Log Tail
         if: failure()
         run: |
@@ -409,7 +410,7 @@ jobs:
           echo "🔍 Checking for error lines:"
           find build/logs -name "*.log" -exec grep -i "error:" {} \; 2>/dev/null || echo "No errors found in log"
       
-      # 📋 Upload build logs for debugging
+      # Upload build logs for debugging
       - name: Upload Build Logs
         uses: actions/upload-artifact@v4
         if: always()
@@ -420,7 +421,7 @@ jobs:
             build/
           retention-days: 7
 
-      # 🔟 Cleanup
+      # Cleanup
       - name: Cleanup
         if: always()
         run: |
