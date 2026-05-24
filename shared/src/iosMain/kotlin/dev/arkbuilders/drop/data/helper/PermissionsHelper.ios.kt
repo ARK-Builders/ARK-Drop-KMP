@@ -3,7 +3,10 @@
 package dev.arkbuilders.drop.data.helper
 
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.AVFoundation.*
+import platform.AVFoundation.AVAuthorizationStatusAuthorized
+import platform.AVFoundation.AVCaptureDevice
+import platform.AVFoundation.AVMediaTypeVideo
+import platform.AVFoundation.authorizationStatusForMediaType
 
 actual class PermissionsHelper {
     actual fun isCameraGranted(): Boolean {

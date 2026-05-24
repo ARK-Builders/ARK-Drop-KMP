@@ -2,18 +2,45 @@
 
 package dev.arkbuilders.drop.domain.libwrapper.bridge
 
-import dev.arkbuilders.drop.bridge.*
+import dev.arkbuilders.drop.bridge.ArkDropBridge
+import dev.arkbuilders.drop.bridge.ArkDropReceiveFilesBubbleProtocol
+import dev.arkbuilders.drop.bridge.ArkDropReceiveFilesRequest
+import dev.arkbuilders.drop.bridge.ArkDropReceiveFilesSubscriberProtocol
+import dev.arkbuilders.drop.bridge.ArkDropReceiverConfig
+import dev.arkbuilders.drop.bridge.ArkDropReceiverProfile
+import dev.arkbuilders.drop.bridge.ArkDropSendFilesBubbleProtocol
+import dev.arkbuilders.drop.bridge.ArkDropSendFilesRequest
+import dev.arkbuilders.drop.bridge.ArkDropSendFilesSubscriberProtocol
+import dev.arkbuilders.drop.bridge.ArkDropSenderConfig
+import dev.arkbuilders.drop.bridge.ArkDropSenderFile
+import dev.arkbuilders.drop.bridge.ArkDropSenderFileDataProtocol
+import dev.arkbuilders.drop.bridge.ArkDropSenderProfile
 import dev.arkbuilders.drop.bridge.crashlytics_log
 import dev.arkbuilders.drop.bridge.crashlytics_recordError
 import dev.arkbuilders.drop.domain.libwrapper.receive.DropReceiveFilesBubble
 import dev.arkbuilders.drop.domain.libwrapper.receive.DropReceiveFilesSubscriber
+import dev.arkbuilders.drop.domain.libwrapper.receive.DropReceiveFilesSubscriberImpl
 import dev.arkbuilders.drop.domain.libwrapper.receive.request.DropReceiveFilesRequest
 import dev.arkbuilders.drop.domain.libwrapper.send.DropSendFilesBubble
 import dev.arkbuilders.drop.domain.libwrapper.send.DropSendFilesSubscriber
 import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSendFilesRequest
 import dev.arkbuilders.drop.domain.libwrapper.send.request.DropSenderFileData
-import kotlinx.cinterop.*
-import platform.Foundation.*
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.reinterpret
+import kotlinx.cinterop.usePinned
+import kotlinx.cinterop.value
+import platform.Foundation.NSData
+import platform.Foundation.NSError
+import platform.Foundation.NSNumber
+import platform.Foundation.data
+import platform.Foundation.dataWithBytes
+import platform.Foundation.getBytes
+import platform.Foundation.numberWithUnsignedChar
 import platform.darwin.NSObject
 
 /**
@@ -24,10 +51,15 @@ object ArkDropBridgeWrapper {
     suspend fun sendFiles(request: DropSendFilesRequest): DropSendFilesBubble {
         val fileNames = request.files.map { it.name }
         crashlytics_log(
-            "ArkDropBridgeWrapper: sendFiles - profile: ${request.profile.name}, files: $fileNames, fileCount: ${request.files.size}",
+            "ArkDropBridgeWrapper: sendFiles - " +
+                "profile: ${request.profile.name}, " +
+                "files: $fileNames, " +
+                "fileCount: ${request.files.size}",
         )
         crashlytics_log(
-            "ArkDropBridgeWrapper: sendFiles - config chunkSize: ${request.config?.chunkSize}, parallelStreams: ${request.config?.parallelStreams}",
+            "ArkDropBridgeWrapper: sendFiles - " +
+                "config chunkSize: ${request.config?.chunkSize}, " +
+                "parallelStreams: ${request.config?.parallelStreams}",
         )
 
         val profile =
@@ -40,7 +72,9 @@ object ArkDropBridgeWrapper {
             request.files.map { file ->
                 val fileData = ArkDropSenderFileDataAdapter(file.data)
                 crashlytics_log(
-                    "ArkDropBridgeWrapper: bridging file - name: ${file.name}, dataLen: ${file.data.len()}",
+                    "ArkDropBridgeWrapper: bridging file - " +
+                        "name: ${file.name}, " +
+                        "dataLen: ${file.data.len()}",
                 )
                 ArkDropSenderFile().apply {
                     this.name = file.name
@@ -66,13 +100,13 @@ object ArkDropBridgeWrapper {
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
             memScoped {
                 val bubblePtr =
-                    alloc<ObjCObjectVar<dev.arkbuilders.drop.bridge.ArkDropSendFilesBubbleProtocol?>>()
+                    alloc<ObjCObjectVar<ArkDropSendFilesBubbleProtocol?>>()
                 val errorPtr = alloc<ObjCObjectVar<NSError?>>()
 
                 crashlytics_log(
                     "ArkDropBridgeWrapper: calling native ArkDropBridge.sendFilesWithRequest",
                 )
-                dev.arkbuilders.drop.bridge.ArkDropBridge.sendFilesWithRequest(
+                ArkDropBridge.sendFilesWithRequest(
                     bridgeRequest,
                     bubble = bubblePtr.ptr,
                     error = errorPtr.ptr,
@@ -80,14 +114,18 @@ object ArkDropBridgeWrapper {
 
                 val error = errorPtr.value
                 if (error != null) {
-                    val errorMsg = "Failed to send files (native bridge error): ${error.localizedDescription}"
+                    val errorMsg =
+                        "Failed to send files (native bridge error): " +
+                            error.localizedDescription
                     crashlytics_recordError("ArkDropBridgeWrapper: $errorMsg", null)
                     throw Exception(errorMsg)
                 }
 
                 val bubble = bubblePtr.value ?: throw Exception("Failed to create send bubble")
                 crashlytics_log(
-                    "ArkDropBridgeWrapper: bridge returned bubble successfully - ticket: ${bubble.getTicket()}, confirmation: ${bubble.getConfirmation()}",
+                    "ArkDropBridgeWrapper: bridge returned bubble successfully - " +
+                        "ticket: ${bubble.getTicket()}, " +
+                        "confirmation: ${bubble.getConfirmation()}",
                 )
                 ArkDropSendFilesBubbleWrapper(bubble)
             }
@@ -96,7 +134,12 @@ object ArkDropBridgeWrapper {
 
     suspend fun receiveFiles(request: DropReceiveFilesRequest): DropReceiveFilesBubble {
         crashlytics_log(
-            "ArkDropBridgeWrapper: receiveFiles - ticket: ${request.ticket}, confirmation: ${request.confirmation}, profile: ${request.profile.name}, chunkSize: ${request.config.chunkSize}, parallelStreams: ${request.config.parallelStreams}",
+            "ArkDropBridgeWrapper: receiveFiles - " +
+                "ticket: ${request.ticket}, " +
+                "confirmation: ${request.confirmation}, " +
+                "profile: ${request.profile.name}, " +
+                "chunkSize: ${request.config.chunkSize}, " +
+                "parallelStreams: ${request.config.parallelStreams}",
         )
 
         val profile =
@@ -122,13 +165,13 @@ object ArkDropBridgeWrapper {
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
             memScoped {
                 val bubblePtr =
-                    alloc<ObjCObjectVar<dev.arkbuilders.drop.bridge.ArkDropReceiveFilesBubbleProtocol?>>()
+                    alloc<ObjCObjectVar<ArkDropReceiveFilesBubbleProtocol?>>()
                 val errorPtr = alloc<ObjCObjectVar<NSError?>>()
 
                 crashlytics_log(
                     "ArkDropBridgeWrapper: calling native ArkDropBridge.receiveFilesWithRequest",
                 )
-                dev.arkbuilders.drop.bridge.ArkDropBridge.receiveFilesWithRequest(
+                ArkDropBridge.receiveFilesWithRequest(
                     bridgeRequest,
                     bubble = bubblePtr.ptr,
                     error = errorPtr.ptr,
@@ -136,8 +179,14 @@ object ArkDropBridgeWrapper {
 
                 val error = errorPtr.value
                 if (error != null) {
-                    val errorMsg = "Failed to receive files (native bridge error): ${error.localizedDescription}"
-                    crashlytics_recordError("ArkDropBridgeWrapper: $errorMsg", null)
+                    val errorMsg =
+                        "Failed to receive files (native bridge error): " +
+                            error.localizedDescription
+                    crashlytics_recordError(
+                        "ArkDropBridgeWrapper: " +
+                            errorMsg,
+                        null,
+                    )
                     throw Exception(errorMsg)
                 }
 
@@ -155,7 +204,7 @@ object ArkDropBridgeWrapper {
  */
 private class ArkDropSenderFileDataAdapter(
     private val data: DropSenderFileData,
-) : NSObject(), dev.arkbuilders.drop.bridge.ArkDropSenderFileDataProtocol {
+) : NSObject(), ArkDropSenderFileDataProtocol {
     override fun len(): ULong {
         return try {
             data.len()
@@ -193,7 +242,7 @@ private class ArkDropSenderFileDataAdapter(
  * Wrapper for ArkDropSendFilesBubble
  */
 private class ArkDropSendFilesBubbleWrapper(
-    private val bubble: dev.arkbuilders.drop.bridge.ArkDropSendFilesBubbleProtocol,
+    private val bubble: ArkDropSendFilesBubbleProtocol,
 ) : DropSendFilesBubble {
     override suspend fun cancel() {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
@@ -237,7 +286,7 @@ private class ArkDropSendFilesBubbleWrapper(
  * Wrapper for ArkDropReceiveFilesBubble
  */
 private class ArkDropReceiveFilesBubbleWrapper(
-    private val bubble: dev.arkbuilders.drop.bridge.ArkDropReceiveFilesBubbleProtocol,
+    private val bubble: ArkDropReceiveFilesBubbleProtocol,
 ) : DropReceiveFilesBubble {
     override fun cancel() {
         bubble.cancel()
@@ -274,10 +323,10 @@ private class ArkDropReceiveFilesBubbleWrapper(
  */
 private class ArkDropSendFilesSubscriberAdapter(
     private val subscriber: DropSendFilesSubscriber,
-) : NSObject(), dev.arkbuilders.drop.bridge.ArkDropSendFilesSubscriberProtocol {
+) : NSObject(), ArkDropSendFilesSubscriberProtocol {
     private val native =
         (subscriber as? dev.arkbuilders.drop.domain.libwrapper.send.DropSendFilesSubscriberImpl)
-            ?.native as? dev.arkbuilders.drop.domain.libwrapper.send.SendFilesSubscriberImpl
+            ?.native
             ?: throw IllegalArgumentException("Invalid subscriber type")
 
     override fun getId(): String = native.getId()
@@ -307,10 +356,10 @@ private class ArkDropSendFilesSubscriberAdapter(
  */
 private class ArkDropReceiveFilesSubscriberAdapter(
     private val subscriber: DropReceiveFilesSubscriber,
-) : NSObject(), dev.arkbuilders.drop.bridge.ArkDropReceiveFilesSubscriberProtocol {
+) : NSObject(), ArkDropReceiveFilesSubscriberProtocol {
     private val native =
-        (subscriber as? dev.arkbuilders.drop.domain.libwrapper.receive.DropReceiveFilesSubscriberImpl)
-            ?.native as? dev.arkbuilders.drop.domain.libwrapper.receive.ReceiveFilesSubscriberImpl
+        (subscriber as? DropReceiveFilesSubscriberImpl)
+            ?.native
             ?: throw IllegalArgumentException("Invalid subscriber type")
 
     override fun getId(): String = native.getId()
@@ -346,7 +395,8 @@ private class ArkDropReceiveFilesSubscriberAdapter(
                     val dict = fileDict as? Map<*, *> ?: return@mapNotNull null
                     val id = dict["id"] as? String ?: return@mapNotNull null
                     val name = dict["name"] as? String ?: return@mapNotNull null
-                    val len = (dict["len"] as? Number)?.toLong()?.toULong() ?: return@mapNotNull null
+                    val len =
+                        (dict["len"] as? Number)?.toLong()?.toULong() ?: return@mapNotNull null
 
                     dev.arkbuilders.drop.domain.libwrapper.receive.ReceiveFileInfo(
                         id = id,
@@ -356,7 +406,7 @@ private class ArkDropReceiveFilesSubscriberAdapter(
                 }
 
             val currentProgress = native.progress.value
-            native._progress.value =
+            native.progressMutable.value =
                 currentProgress.copy(
                     isConnected = true,
                     senderName = senderName,

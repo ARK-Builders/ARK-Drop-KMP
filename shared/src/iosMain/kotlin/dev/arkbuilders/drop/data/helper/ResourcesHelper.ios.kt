@@ -10,11 +10,30 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.useContents
 import kotlinx.cinterop.usePinned
-import platform.CoreGraphics.*
-import platform.CoreImage.*
-import platform.Foundation.*
-import platform.UIKit.*
-import kotlin.IllegalArgumentException
+import platform.CoreGraphics.CGAffineTransformMakeScale
+import platform.CoreImage.CIContext
+import platform.CoreImage.CIFilter
+import platform.CoreImage.createCGImage
+import platform.CoreImage.filterWithName
+import platform.Foundation.NSData
+import platform.Foundation.NSDate
+import platform.Foundation.NSDocumentDirectory
+import platform.Foundation.NSFileManager
+import platform.Foundation.NSNumber
+import platform.Foundation.NSString
+import platform.Foundation.NSURL
+import platform.Foundation.NSURLFileSizeKey
+import platform.Foundation.NSUTF8StringEncoding
+import platform.Foundation.NSUserDomainMask
+import platform.Foundation.data
+import platform.Foundation.dataUsingEncoding
+import platform.Foundation.dataWithBytes
+import platform.Foundation.getBytes
+import platform.Foundation.setValue
+import platform.Foundation.timeIntervalSince1970
+import platform.Foundation.writeToURL
+import platform.UIKit.UIImage
+import platform.UIKit.UIImagePNGRepresentation
 
 actual class ResourcesHelper {
     actual fun getFileName(uri: String): String? {
@@ -46,7 +65,8 @@ actual class ResourcesHelper {
                     )
                 } else {
                     crashlytics_log(
-                        "ResourcesHelper: validateUris - skipped (size out of range): $uri, size: $size",
+                        "ResourcesHelper: validateUris - skipped (size out of range): " +
+                            "$uri, size: $size",
                     )
                     skippedCount++
                 }
@@ -57,7 +77,8 @@ actual class ResourcesHelper {
         }
 
         crashlytics_log(
-            "ResourcesHelper: validateUris complete - valid: ${validFiles.size}, skipped: $skippedCount",
+            "ResourcesHelper: validateUris complete - " +
+                "valid: ${validFiles.size}, skipped: $skippedCount",
         )
         return validFiles to skippedCount
     }
@@ -83,7 +104,10 @@ actual class ResourcesHelper {
     ): String? {
         val uniqueName = getUniqueFileName(fileName)
         crashlytics_log(
-            "ResourcesHelper: saveFileToDownloads - originalName=$fileName uniqueName=$uniqueName dataSize=${data.size}",
+            "ResourcesHelper: saveFileToDownloads - " +
+                "originalName=$fileName " +
+                "uniqueName=$uniqueName " +
+                "dataSize=${data.size}",
         )
 
         return try {
@@ -98,7 +122,8 @@ actual class ResourcesHelper {
                 )
             if (documentsPath == null) {
                 crashlytics_recordError(
-                    "ResourcesHelper: saveFileToDownloads - failed to get documents directory",
+                    "ResourcesHelper: saveFileToDownloads - " +
+                        "failed to get documents directory",
                     null,
                 )
                 return null
@@ -160,7 +185,8 @@ actual class ResourcesHelper {
             val outputImage = filter?.outputImage
             if (outputImage == null) {
                 crashlytics_recordError(
-                    "ResourcesHelper: generateQRCode - CIFilter returned nil outputImage",
+                    "ResourcesHelper: generateQRCode - " +
+                        "CIFilter returned nil outputImage",
                     null,
                 )
                 return null

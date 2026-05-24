@@ -2,7 +2,10 @@
 
 package dev.arkbuilders.drop.domain.libwrapper.send
 
-import dev.arkbuilders.drop.bridge.*
+import dev.arkbuilders.drop.bridge.ArkDropSendFilesBubbleProtocol
+import dev.arkbuilders.drop.bridge.ArkDropSendFilesSubscriberProtocol
+import dev.arkbuilders.drop.bridge.crashlytics_log
+import dev.arkbuilders.drop.bridge.crashlytics_recordError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -20,7 +23,8 @@ class DropSendFilesBubbleImpl(
                 bubble.cancelWithCompletion { error ->
                     if (error != null) {
                         crashlytics_recordError(
-                            "DropSendFilesBubble: cancel failed error=${error.localizedDescription}",
+                            "DropSendFilesBubble: " +
+                                "cancel failed error=${error.localizedDescription}",
                             null,
                         )
                         cont.resumeWithException(Exception(error.localizedDescription))
@@ -104,7 +108,10 @@ private class ArkDropSendFilesSubscriberAdapter(
         remaining: ULong,
     ) {
         crashlytics_log(
-            "ArkDropSendFilesSubscriberAdapter: sending progress name=$name sent=$sent remaining=$remaining",
+            "ArkDropSendFilesSubscriberAdapter: sending progress " +
+                "name=$name " +
+                "sent=$sent " +
+                "remaining=$remaining",
         )
         native.updateSendingProgress(name, sent, remaining)
     }

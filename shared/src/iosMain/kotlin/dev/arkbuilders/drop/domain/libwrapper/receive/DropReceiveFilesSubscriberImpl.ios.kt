@@ -4,11 +4,16 @@ package dev.arkbuilders.drop.domain.libwrapper.receive
 
 import dev.arkbuilders.drop.bridge.crashlytics_log
 import dev.arkbuilders.drop.bridge.crashlytics_recordError
-import kotlinx.cinterop.*
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import platform.Foundation.*
+import platform.Foundation.NSMutableData
+import platform.Foundation.NSUUID
+import platform.Foundation.appendBytes
+import platform.Foundation.dataWithCapacity
+import platform.Foundation.getBytes
 
 class DropReceiveFilesSubscriberImpl(
     val native: ReceiveFilesSubscriberImpl,
@@ -28,8 +33,8 @@ class ReceiveFilesSubscriberImpl {
     // Thread-safe storage for received data using NSMutableData for efficient appending
     private val receivedDataMap = mutableMapOf<String, NSMutableData>()
 
-    internal val _progress = MutableStateFlow(DropReceivingProgress())
-    val progress: StateFlow<DropReceivingProgress> = _progress.asStateFlow()
+    internal val progressMutable = MutableStateFlow(DropReceivingProgress())
+    val progress: StateFlow<DropReceivingProgress> = progressMutable.asStateFlow()
 
     fun getId(): String = id
 
@@ -42,7 +47,7 @@ class ReceiveFilesSubscriberImpl {
         // Clear all data streams
         crashlytics_log("ReceiveFilesSubscriber: reset called")
         receivedDataMap.clear()
-        _progress.value = DropReceivingProgress()
+        progressMutable.value = DropReceivingProgress()
         crashlytics_log("ReceiveFilesSubscriber: reset completed")
     }
 
@@ -50,7 +55,7 @@ class ReceiveFilesSubscriberImpl {
      * Get files that have been completely received
      */
     fun getCompleteFiles(): List<Pair<ReceiveFileInfo, ByteArray>> {
-        val currentProgress = _progress.value
+        val currentProgress = progressMutable.value
         crashlytics_log(
             "ReceiveFilesSubscriber: getCompleteFiles totalFiles=${currentProgress.files.size}",
         )
@@ -63,16 +68,23 @@ class ReceiveFilesSubscriberImpl {
                     if (data != null) {
                         val length = data.length.toInt()
                         crashlytics_log(
-                            "ReceiveFilesSubscriber: complete file id=${fileInfo.id} name=${fileInfo.name} bytes=$length",
+                            "ReceiveFilesSubscriber: complete " +
+                                "file id=${fileInfo.id} " +
+                                "name=${fileInfo.name} " +
+                                "bytes=$length",
                         )
                         val bytes = ByteArray(length)
                         bytes.usePinned { pinned ->
-                            data.getBytes(pinned.addressOf(0), length = length.toULong())
+                            data.getBytes(
+                                pinned.addressOf(0),
+                                length = length.toULong(),
+                            )
                         }
                         Pair(fileInfo, bytes)
                     } else {
                         crashlytics_recordError(
-                            "ReceiveFilesSubscriber: complete file missing data id=${fileInfo.id}",
+                            "ReceiveFilesSubscriber: " +
+                                "complete file missing data id=${fileInfo.id}",
                             null,
                         )
                         null
@@ -106,7 +118,7 @@ class ReceiveFilesSubscriberImpl {
         }
 
         // Update progress
-        val currentProgress = _progress.value
+        val currentProgress = progressMutable.value
         val fileInfo = currentProgress.files.find { it.id == fileId }
 
         if (fileInfo != null) {
@@ -115,7 +127,12 @@ class ReceiveFilesSubscriberImpl {
             val totalSize = fileInfo.size
 
             crashlytics_log(
-                "ReceiveFilesSubscriber: file progress id=$fileId name=${fileInfo.name} received=$receivedBytes total=$totalSize complete=$isComplete",
+                "ReceiveFilesSubscriber: file progress " +
+                    "id=$fileId " +
+                    "name=${fileInfo.name} " +
+                    "received=$receivedBytes " +
+                    "total=$totalSize " +
+                    "complete=$isComplete",
             )
 
             val updatedFileProgress = currentProgress.fileProgress.toMutableMap()
@@ -125,13 +142,14 @@ class ReceiveFilesSubscriberImpl {
                     isComplete = isComplete,
                 )
 
-            _progress.value =
+            progressMutable.value =
                 currentProgress.copy(
                     fileProgress = updatedFileProgress.toMap(),
                 )
         } else {
             crashlytics_log(
-                "ReceiveFilesSubscriber: fileId=$fileId not in expected file list, buffering data size=${data.size}",
+                "ReceiveFilesSubscriber: " +
+                    "fileId=$fileId not in expected file list, buffering data size=${data.size}",
             )
         }
     }

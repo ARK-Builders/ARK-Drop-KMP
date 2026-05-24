@@ -1,4 +1,3 @@
-
 @file:OptIn(ExperimentalForeignApi::class)
 
 package dev.arkbuilders.drop.domain.libwrapper.send
@@ -10,7 +9,11 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.usePinned
-import platform.Foundation.*
+import platform.Foundation.NSInputStream
+import platform.Foundation.NSNumber
+import platform.Foundation.NSURL
+import platform.Foundation.NSURLFileSizeKey
+import platform.Foundation.inputStreamWithURL
 
 class SenderFileDataImpl(
     private val uri: String,
@@ -36,7 +39,11 @@ class SenderFileDataImpl(
                     ?: NSURL.URLWithString(uri)
                     ?: run {
                         println("⚠️ SenderFileDataImpl: Failed to create URL from: $uri")
-                        crashlytics_recordError("SenderFileDataImpl: failed to create URL from: $uri", null)
+                        crashlytics_recordError(
+                            "SenderFileDataImpl: " +
+                                "failed to create URL from: $uri",
+                            null,
+                        )
                         return
                     }
 
@@ -74,7 +81,11 @@ class SenderFileDataImpl(
             crashlytics_log("SenderFileDataImpl: successfully initialized: $uri")
         } catch (e: Exception) {
             println("❌ SenderFileDataImpl: Failed to initialize file: $uri, error: $e")
-            crashlytics_recordError("SenderFileDataImpl: failed to initialize: $uri", e.message)
+            crashlytics_recordError(
+                "SenderFileDataImpl: " +
+                    "failed to initialize: $uri",
+                e.message,
+            )
         }
     }
 
@@ -88,14 +99,21 @@ class SenderFileDataImpl(
         initialize()
         if (!isInitialized) {
             println("⚠️ SenderFileDataImpl.read() - not initialized for $uri")
-            crashlytics_recordError("SenderFileDataImpl.read() - not initialized for: $uri", null)
+            crashlytics_recordError(
+                "SenderFileDataImpl.read() - " +
+                    "not initialized for: $uri",
+                null,
+            )
             return null
         }
         return try {
             val buffer = UByteArray(1)
             val bytesRead =
                 buffer.usePinned { pinned ->
-                    inputStream?.read(pinned.addressOf(0).reinterpret(), maxLength = 1u)?.toLong() ?: 0L
+                    inputStream?.read(
+                        pinned.addressOf(0).reinterpret(),
+                        maxLength = 1u,
+                    ) ?: 0L
                 }
             if (bytesRead == 0L) {
                 inputStream?.close()
@@ -108,7 +126,11 @@ class SenderFileDataImpl(
             }
         } catch (e: Exception) {
             println("⚠️ SenderFileDataImpl.read() error for $uri: $e")
-            crashlytics_recordError("SenderFileDataImpl.read() error for: $uri", e.message)
+            crashlytics_recordError(
+                "SenderFileDataImpl.read() error for: " +
+                    uri,
+                e.message,
+            )
             null
         }
     }
@@ -127,7 +149,10 @@ class SenderFileDataImpl(
             val buffer = UByteArray(size)
             val bytesRead =
                 buffer.usePinned { pinned ->
-                    inputStream?.read(pinned.addressOf(0).reinterpret(), maxLength = size.toULong())?.toLong() ?: 0L
+                    inputStream?.read(
+                        pinned.addressOf(0).reinterpret(),
+                        maxLength = size.toULong(),
+                    ) ?: 0L
                 }
             if (bytesRead == 0L) {
                 inputStream?.close()
@@ -138,7 +163,8 @@ class SenderFileDataImpl(
             } else {
                 val result = buffer.asByteArray().copyOf(bytesRead.toInt())
                 crashlytics_log(
-                    "SenderFileDataImpl: readChunk() - requested: $size, read: $bytesRead bytes for: $uri",
+                    "SenderFileDataImpl: readChunk() - requested: $size, " +
+                        "read: $bytesRead bytes for: $uri",
                 )
                 result
             }

@@ -47,7 +47,10 @@ class SendFilesSubscriberImpl {
         remaining: ULong,
     ) {
         crashlytics_log(
-            "SendFilesSubscriber: updateSendingProgress fileName=$fileName sent=$sent remaining=$remaining",
+            "SendFilesSubscriber: updateSendingProgress " +
+                "fileName=$fileName " +
+                "sent=$sent " +
+                "remaining=$remaining",
         )
         _progress.value =
             _progress.value.copy(

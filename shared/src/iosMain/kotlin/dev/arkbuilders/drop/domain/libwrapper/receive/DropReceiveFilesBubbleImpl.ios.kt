@@ -2,9 +2,20 @@
 
 package dev.arkbuilders.drop.domain.libwrapper.receive
 
-import dev.arkbuilders.drop.bridge.*
-import kotlinx.cinterop.*
-import platform.Foundation.*
+import dev.arkbuilders.drop.bridge.ArkDropReceiveFilesBubbleProtocol
+import dev.arkbuilders.drop.bridge.ArkDropReceiveFilesSubscriberProtocol
+import dev.arkbuilders.drop.bridge.crashlytics_log
+import dev.arkbuilders.drop.bridge.crashlytics_recordError
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.usePinned
+import kotlinx.cinterop.value
+import platform.Foundation.NSData
+import platform.Foundation.NSError
+import platform.Foundation.getBytes
 import platform.darwin.NSObject
 
 class DropReceiveFilesBubbleImpl(
@@ -35,7 +46,8 @@ class DropReceiveFilesBubbleImpl(
             val error = errorPtr.value
             if (error != null) {
                 crashlytics_recordError(
-                    "DropReceiveFilesBubble: start failed error=${error.localizedDescription}",
+                    "DropReceiveFilesBubble: start failed " +
+                        "error=${error.localizedDescription}",
                     null,
                 )
                 throw Exception("Failed to start: ${error.localizedDescription}")
@@ -94,7 +106,8 @@ private class ArkDropReceiveFilesSubscriberAdapter(
         files: List<*>,
     ) {
         crashlytics_log(
-            "ArkDropReceiveFilesSubscriberAdapter: connected to sender=$senderName fileCount=${files.size}",
+            "ArkDropReceiveFilesSubscriberAdapter: " +
+                "connected to sender=$senderName fileCount=${files.size}",
         )
 
         val fileInfos =
@@ -116,12 +129,15 @@ private class ArkDropReceiveFilesSubscriberAdapter(
         )
         fileInfos.forEach { info ->
             crashlytics_log(
-                "ArkDropReceiveFilesSubscriberAdapter: file id=${info.id} name=${info.name} size=${info.size}",
+                "ArkDropReceiveFilesSubscriberAdapter: " +
+                    "file id=${info.id} " +
+                    "name=${info.name} " +
+                    "size=${info.size}",
             )
         }
 
         val currentProgress = native.progress.value
-        native._progress.value =
+        native.progressMutable.value =
             currentProgress.copy(
                 isConnected = true,
                 senderName = senderName,

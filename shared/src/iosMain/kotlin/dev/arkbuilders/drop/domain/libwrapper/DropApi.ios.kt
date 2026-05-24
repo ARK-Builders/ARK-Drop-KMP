@@ -37,7 +37,9 @@ class IOSDropApi : DropApi {
     override suspend fun receiveFiles(request: DropReceiveFilesRequest): DropReceiveFilesBubble {
         // Use the bridge wrapper to call the Objective-C bridge
         crashlytics_log(
-            "IOSDropApi: receiveFiles ticket=${request.ticket} confirmation=${request.confirmation}",
+            "IOSDropApi: receiveFiles " +
+                "ticket=${request.ticket} " +
+                "confirmation=${request.confirmation}",
         )
         return ArkDropBridgeWrapper.receiveFiles(request)
     }
