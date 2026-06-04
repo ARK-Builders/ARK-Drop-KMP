@@ -1,6 +1,6 @@
 # Drop - Secure File Sharing
 
-Drop is a secure, peer-to-peer file sharing application for Android that allows you to transfer files between devices over the internet.
+Drop is a secure, peer-to-peer file sharing application for Android and iOS that allows you to transfer files between devices over the internet.
 
 ## Features
 
@@ -42,66 +42,61 @@ To create a release build:
 ./gradlew assembleRelease
 ```
 
-## Google Play Store Release
+## CI, Firebase, And Release Builds
 
-### Setup
+GitHub Actions uses two environments for both platforms:
 
-1. **Create a release keystore** (if you don't have one):
-```bash
-keytool -genkeypair -alias drop-key -keyalg RSA -keysize 2048 -validity 10000 -keystore release-keystore.jks
-```
+- `Development`: PR builds against the test Firebase project, `ark-drop-test`.
+- `Production`: `v*` tag builds against the production Firebase project, `ark-drop-prod`.
 
-2. **Set up GitHub Secrets**:
-   - `KEYSTORE_BASE64`: Base64 encoded keystore file
-   - `KEY_ALIAS`, `KEY_PASSWORD`, `KEYSTORE_PASSWORD`: Keystore credentials
-   - `PLAY_STORE_CREDENTIALS`: Google Play Console service account JSON
+### Development Workflows
 
-3. **Google Play Console Setup**:
-   - Create a new app in Google Play Console
-   - Set up app signing
-   - Create a service account for API access
-   - Download the service account JSON file
+- `android-dev.yml`: runs on pull requests to `main`, builds a signed Android release APK with the development Firebase config, runs KtLint and Android lint.
+- `ios-dev.yml`: runs on pull requests to `main`, builds iOS and uploads to TestFlight with the development Firebase config.
 
-### Release Process
+### Production Workflows
 
-#### Automated Release (Recommended)
+Create a production tag to run both production workflows:
 
-1. **Create a release tag**:
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-2. **Manual workflow dispatch**:
-   - Go to GitHub Actions
-   - Select "Release to Google Play"
-   - Choose the release track (internal/alpha/beta/production)
-   - Run workflow
+- `android-prod.yml`: builds a signed Android release APK using the `Production` environment.
+- `ios-prod.yml`: builds iOS with the `Production` environment and uploads to TestFlight.
 
-#### Manual Release
+### GitHub Secrets Checklist
 
-1. **Build release bundle**:
-```bash
-./gradlew bundleRelease
-```
+Repository secrets shared by iOS TestFlight workflows:
 
-2. **Upload to Play Console**:
-```bash
-./gradlew publishBundle
-```
+- [ ] `ASC_API_KEY_BASE64`: base64-encoded App Store Connect API private key `.p8`.
+- [ ] `ASC_ISSUER_ID`: App Store Connect API issuer ID.
+- [ ] `ASC_KEY_ID`: App Store Connect API key ID.
+- [ ] `IOS_P12_BASE64`: base64-encoded Apple Distribution certificate `.p12`.
+- [ ] `IOS_P12_PASSWORD`: password for `IOS_P12_BASE64`.
+- [ ] `IOS_PROFILE_BASE64`: base64-encoded App Store provisioning profile `.mobileprovision`.
 
-### Release Tracks
+For the current single Apple Developer account / single App Store app setup, these iOS signing and App Store Connect values are shared by both iOS workflows.
 
-- **Internal**: For internal testing (up to 100 testers)
-- **Alpha**: For alpha testing (open or closed)
-- **Beta**: For beta testing (open or closed)
-- **Production**: For public release
+Firebase config secrets present in both `Development` and `Production`:
 
-### Version Management
+- [ ] `ANDROID_GOOGLE_SERVICES_JSON_BASE64`: base64-encoded Android `google-services.json`.
+- [ ] `IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64`: base64-encoded iOS `GoogleService-Info.plist`.
 
-Versions are automatically managed:
-- **Version Code**: GitHub run number
-- **Version Name**: Git tag (for releases) or dev build number
+Use the same secret names in both environments. Only the secret values differ: `Development` values must come from `ark-drop-test`, and `Production` values must come from `ark-drop-prod`.
+
+Android signing secrets present in both `Development` and `Production`:
+
+- [ ] `ANDROID_KEYSTORE_ENCRYPTED`: encrypted ASCII-armored Android keystore, written to `keystore.asc` in CI.
+- [ ] `ANDROID_KEYSTORE_PASSWORD`: passphrase used by GPG to decrypt `ANDROID_KEYSTORE_ENCRYPTED`.
+- [ ] `ANDROID_KEYSTORE_STORE_PASSWORD`: password for the decrypted JKS file.
+- [ ] `ANDROID_KEY_ALIAS`: alias of the signing key inside the JKS.
+- [ ] `ANDROID_KEY_PASSWORD`: password for the signing key inside the JKS.
+
+Both Android workflows validate that all signing secrets are present, that the encrypted keystore can be decrypted, that the alias exists, and that the key password can access the private key. Android development artifacts are not distributed through Google Play, but they use the same release build path with development environment secrets.
+
+The workflow validates Firebase project IDs before building, so a development workflow must receive `ark-drop-test` configs and a production workflow must receive `ark-drop-prod` configs.
 
 ## How Drop Works
 

@@ -12,6 +12,11 @@ plugins {
     alias(libs.plugins.firebase.crashlytics)
 }
 
+fun signingValue(name: String): String? =
+    providers.environmentVariable(name)
+        .orElse(providers.gradleProperty(name))
+        .orNull
+
 kotlin {
     androidTarget {
         compilerOptions {
@@ -73,11 +78,11 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     signingConfigs {
-        create("testRelease") {
+        create("release") {
             storeFile = project.rootProject.file("keystore.jks")
-            storePassword = "sw0rdf1sh"
-            keyAlias = "ark-builders-test"
-            keyPassword = "rybamech"
+            storePassword = signingValue("ANDROID_KEYSTORE_STORE_PASSWORD")
+            keyAlias = signingValue("ANDROID_KEY_ALIAS")
+            keyPassword = signingValue("ANDROID_KEY_PASSWORD")
         }
     }
 
@@ -95,7 +100,7 @@ android {
     }
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("testRelease")
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
         }
     }
@@ -107,6 +112,30 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+}
+
+val validateAndroidReleaseSigning by tasks.registering {
+    doLast {
+        val missing = listOf(
+            "ANDROID_KEYSTORE_STORE_PASSWORD",
+            "ANDROID_KEY_ALIAS",
+            "ANDROID_KEY_PASSWORD",
+        ).filter { signingValue(it).isNullOrBlank() }
+
+        if (missing.isNotEmpty()) {
+            error("Missing Android release signing values: ${missing.joinToString()}")
+        }
+
+        if (!project.rootProject.file("keystore.jks").isFile) {
+            error("Missing Android release keystore: ${project.rootProject.file("keystore.jks")}")
+        }
+    }
+}
+
+tasks.matching { task ->
+    task.name == "packageRelease" || task.name == "bundleRelease" || task.name == "validateSigningRelease"
+}.configureEach {
+    dependsOn(validateAndroidReleaseSigning)
 }
 
 tasks.check.dependsOn(tasks.ktlintCheck)

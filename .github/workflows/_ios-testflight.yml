@@ -1,0 +1,217 @@
+name: iOS TestFlight
+
+on:
+    workflow_call:
+        inputs:
+            environment_name:
+                required: true
+                type: string
+            artifact_name:
+                required: true
+                type: string
+            log_artifact_name:
+                required: true
+                type: string
+            expected_firebase_project_id:
+                required: true
+                type: string
+
+jobs:
+    build:
+        runs-on: macos-26
+        environment: ${{ inputs.environment_name }}
+        env:
+            APP_BUNDLE_ID: dev.ark-builders.drop
+            APP_TEAM_ID: SQNXHTL7FT
+            IOS_P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+            ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+            ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Validate secrets
+              run: |
+                  set -euo pipefail
+                  missing=()
+                  for name in \
+                    IOS_P12_BASE64 \
+                    IOS_P12_PASSWORD \
+                    IOS_PROFILE_BASE64 \
+                    ASC_API_KEY_BASE64 \
+                    ASC_KEY_ID \
+                    ASC_ISSUER_ID \
+                    IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64
+                  do
+                    if [ -z "${!name:-}" ]; then
+                      missing+=("$name")
+                    fi
+                  done
+
+                  if [ ${#missing[@]} -gt 0 ]; then
+                    printf 'Missing required %s secrets:\n' "${{ inputs.environment_name }}"
+                    printf ' - %s\n' "${missing[@]}"
+                    exit 1
+                  fi
+              env:
+                  IOS_P12_BASE64: ${{ secrets.IOS_P12_BASE64 }}
+                  IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
+                  ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+                  IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+
+            - name: Setup Ruby
+              uses: ruby/setup-ruby@v1
+              with:
+                  ruby-version: "3.2"
+                  bundler-cache: true
+
+            - name: Install gems
+              run: bundle install
+
+            - name: Build Kotlin framework for Release
+              run: |
+                  export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+                  ./gradlew :shared:assembleSharedReleaseXCFramework
+                  mkdir -p shared/build/XCFrameworks/debug
+                  cp -R shared/build/XCFrameworks/release/shared.xcframework shared/build/XCFrameworks/debug/
+
+            - name: Ensure XCFramework Info.plist
+              run: |
+                  set -euo pipefail
+                  XCF_DIR="shared/build/XCFrameworks/debug/shared.xcframework"
+                  if [ ! -f "$XCF_DIR/Info.plist" ]; then
+                    cp shared/build/XCFrameworks/release/shared.xcframework/Info.plist "$XCF_DIR/" 2>/dev/null || \
+                      cp shared/XCFramework-Info.plist "$XCF_DIR/Info.plist"
+                  fi
+
+            - name: Select Xcode version
+              uses: maxim-lobanov/setup-xcode@v1
+              with:
+                  xcode-version: '26.2'
+
+            - name: Decode iOS certificate
+              run: |
+                  set -euo pipefail
+                  echo "$IOS_P12_BASE64" | base64 --decode > cert.p12
+                  if [ "$(stat -f%z cert.p12)" -lt 100 ]; then
+                    echo "cert.p12 is too small, likely corrupted"
+                    exit 1
+                  fi
+              env:
+                  IOS_P12_BASE64: ${{ secrets.IOS_P12_BASE64 }}
+
+            - name: Validate iOS certificate
+              run: |
+                  set -euo pipefail
+                  openssl pkcs12 -in cert.p12 -legacy -nodes -passin env:IOS_P12_PASSWORD 2>&1 | grep -q "PRIVATE KEY"
+
+            - name: Decode provisioning profile
+              run: |
+                  set -euo pipefail
+                  echo "$IOS_PROFILE_BASE64" | base64 --decode > profile.mobileprovision
+                  if [ "$(stat -f%z profile.mobileprovision)" -lt 100 ]; then
+                    echo "profile.mobileprovision is too small, likely corrupted"
+                    exit 1
+                  fi
+                  security cms -D -i profile.mobileprovision > profile.plist
+                  plutil -lint profile.plist
+                  PROFILE_TEAM_ID=$(/usr/libexec/PlistBuddy -c "Print :TeamIdentifier:0" profile.plist)
+                  if [ "$PROFILE_TEAM_ID" != "$APP_TEAM_ID" ]; then
+                    echo "Provisioning profile TeamIdentifier mismatch. Expected $APP_TEAM_ID, got $PROFILE_TEAM_ID"
+                    exit 1
+                  fi
+                  PROFILE_APP_ID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" profile.plist)
+                  EXPECTED_APP_ID="$APP_TEAM_ID.$APP_BUNDLE_ID"
+                  if [ "$PROFILE_APP_ID" != "$EXPECTED_APP_ID" ]; then
+                    echo "Provisioning profile application-identifier mismatch. Expected $EXPECTED_APP_ID, got $PROFILE_APP_ID"
+                    exit 1
+                  fi
+              env:
+                  IOS_PROFILE_BASE64: ${{ secrets.IOS_PROFILE_BASE64 }}
+
+            - name: Decode and validate Firebase config
+              run: |
+                  set -euo pipefail
+                  PLIST_PATH="iosApp/iosApp/GoogleService-Info.plist"
+                  echo "$IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 -D > "$PLIST_PATH"
+                  plutil -lint "$PLIST_PATH"
+                  for key in GOOGLE_APP_ID BUNDLE_ID API_KEY GCM_SENDER_ID PROJECT_ID; do
+                    /usr/libexec/PlistBuddy -c "Print :$key" "$PLIST_PATH" >/dev/null
+                  done
+                  PLIST_PROJECT_ID=$(/usr/libexec/PlistBuddy -c "Print :PROJECT_ID" "$PLIST_PATH")
+                  if [ "$PLIST_PROJECT_ID" != "${{ inputs.expected_firebase_project_id }}" ]; then
+                    echo "Firebase PROJECT_ID mismatch. Expected ${{ inputs.expected_firebase_project_id }}, got $PLIST_PROJECT_ID"
+                    exit 1
+                  fi
+                  PLIST_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :BUNDLE_ID" "$PLIST_PATH")
+                  if [ "$PLIST_BUNDLE_ID" != "$APP_BUNDLE_ID" ]; then
+                    echo "Firebase BUNDLE_ID mismatch. Expected $APP_BUNDLE_ID, got $PLIST_BUNDLE_ID"
+                    exit 1
+                  fi
+                  GOOGLE_APP_ID=$(/usr/libexec/PlistBuddy -c "Print :GOOGLE_APP_ID" "$PLIST_PATH")
+                  if [[ "$GOOGLE_APP_ID" != *":ios:"* ]]; then
+                    echo "Firebase GOOGLE_APP_ID does not look like an iOS app id: $GOOGLE_APP_ID"
+                    exit 1
+                  fi
+                  API_KEY=$(/usr/libexec/PlistBuddy -c "Print :API_KEY" "$PLIST_PATH")
+                  if [ -z "$API_KEY" ]; then
+                    echo "Firebase API_KEY is empty"
+                    exit 1
+                  fi
+              env:
+                  IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+
+            - name: Setup App Store Connect API Key
+              run: |
+                  set -euo pipefail
+                  mkdir -p ~/.fastlane
+                  echo "$ASC_API_KEY_BASE64" | base64 --decode > ~/.fastlane/AuthKey.p8
+                  chmod 600 ~/.fastlane/AuthKey.p8
+                  if [ ! -s ~/.fastlane/AuthKey.p8 ]; then
+                    echo "AuthKey.p8 is missing or empty"
+                    exit 1
+                  fi
+                  if ! grep -q "BEGIN PRIVATE KEY" ~/.fastlane/AuthKey.p8; then
+                    echo "AuthKey.p8 does not look like an App Store Connect private key"
+                    exit 1
+                  fi
+              env:
+                  ASC_API_KEY_BASE64: ${{ secrets.ASC_API_KEY_BASE64 }}
+
+            - name: Set build number for TestFlight
+              run: |
+                  BUILD_NUM=$(date +%s)
+                  sed -i.bak "s/CURRENT_PROJECT_VERSION=.*/CURRENT_PROJECT_VERSION=$BUILD_NUM/" iosApp/Configuration/Config.xcconfig
+                  rm -f iosApp/Configuration/Config.xcconfig.bak
+
+            - name: Build and upload to TestFlight
+              run: bundle exec fastlane beta
+              env:
+                  EXPECTED_FIREBASE_PROJECT_ID: ${{ inputs.expected_firebase_project_id }}
+                  IOS_P12_PASSWORD: ${{ secrets.IOS_P12_PASSWORD }}
+                  APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+                  APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+
+            - name: Upload IPA artifact
+              uses: actions/upload-artifact@v4
+              if: success()
+              with:
+                  name: ${{ inputs.artifact_name }}
+                  path: build/ARK-Drop.ipa
+                  retention-days: 30
+
+            - name: Upload build logs
+              uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: ${{ inputs.log_artifact_name }}
+                  path: |
+                      ~/Library/Logs/gym/
+                      build/
+                  retention-days: 7
+
+            - name: Cleanup
+              if: always()
+              run: rm -f cert.p12 profile.mobileprovision profile.plist build/Bundled-GoogleService-Info.plist ~/.fastlane/AuthKey.p8

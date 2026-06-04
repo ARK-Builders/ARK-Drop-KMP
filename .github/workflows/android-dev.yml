@@ -1,0 +1,21 @@
+name: Android Dev
+
+on:
+    pull_request:
+        branches: [ main ]
+
+jobs:
+    android:
+        uses: ./.github/workflows/_android-build.yml
+        with:
+            environment_name: Development
+            build_command: ./gradlew assembleRelease
+            expected_firebase_project_id: ark-drop-test
+            run_ktlint: true
+            run_lint: true
+            use_keystore: true
+            upload_artifact: true
+            artifact_name: ark-drop-android-dev
+            artifact_path: ./composeApp/build/outputs/apk/release/composeApp-release.apk
+            lint_artifact_name: android-dev-lint-results
+        secrets: inherit

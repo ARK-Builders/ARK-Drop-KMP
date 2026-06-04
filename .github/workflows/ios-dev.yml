@@ -1,0 +1,15 @@
+name: iOS Dev
+
+on:
+    pull_request:
+        branches: [ main ]
+
+jobs:
+    ios:
+        uses: ./.github/workflows/_ios-testflight.yml
+        with:
+            environment_name: Development
+            expected_firebase_project_id: ark-drop-test
+            artifact_name: ARK-Drop-iOS-Dev-${{ github.run_number }}.ipa
+            log_artifact_name: ios-dev-build-logs
+        secrets: inherit

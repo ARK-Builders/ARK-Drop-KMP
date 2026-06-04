@@ -129,6 +129,25 @@ platform :ios do
       }
     )
 
+    expected_firebase_project_id = ENV['EXPECTED_FIREBASE_PROJECT_ID']
+    if expected_firebase_project_id.to_s.empty?
+      UI.user_error!("EXPECTED_FIREBASE_PROJECT_ID is required")
+    end
+
+    bundled_firebase_plist = "./build/Bundled-GoogleService-Info.plist"
+    sh("unzip -p './build/ARK-Drop.ipa' 'Payload/*.app/GoogleService-Info.plist' > '#{bundled_firebase_plist}'")
+    sh("plutil -lint '#{bundled_firebase_plist}'")
+
+    bundled_project_id = sh("/usr/libexec/PlistBuddy -c 'Print :PROJECT_ID' '#{bundled_firebase_plist}'").strip
+    if bundled_project_id != expected_firebase_project_id
+      UI.user_error!("Bundled Firebase PROJECT_ID mismatch. Expected #{expected_firebase_project_id}, got #{bundled_project_id}")
+    end
+
+    bundled_bundle_id = sh("/usr/libexec/PlistBuddy -c 'Print :BUNDLE_ID' '#{bundled_firebase_plist}'").strip
+    if bundled_bundle_id != ENV['APP_BUNDLE_ID']
+      UI.user_error!("Bundled Firebase BUNDLE_ID mismatch. Expected #{ENV['APP_BUNDLE_ID']}, got #{bundled_bundle_id}")
+    end
+
     UI.success "✅ Build completed successfully!"
 
     # Upload to TestFlight
