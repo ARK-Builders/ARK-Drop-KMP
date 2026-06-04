@@ -132,8 +132,15 @@ val validateAndroidReleaseSigning by tasks.registering {
     }
 }
 
+val androidReleaseSigningTasks =
+    setOf(
+        "packageRelease",
+        "bundleRelease",
+        "validateSigningRelease",
+    )
+
 tasks.matching { task ->
-    task.name == "packageRelease" || task.name == "bundleRelease" || task.name == "validateSigningRelease"
+    task.name in androidReleaseSigningTasks
 }.configureEach {
     dependsOn(validateAndroidReleaseSigning)
 }

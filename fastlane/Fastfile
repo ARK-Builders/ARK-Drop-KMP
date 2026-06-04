@@ -5,13 +5,13 @@ default_platform(:ios)
 platform :ios do
   # Environment variables
   before_all do
-    setup_ci if ENV['CI']
+    ENV['MATCH_READONLY'] = 'true' if ENV['CI']
   end
 
   desc "Push a new beta build to TestFlight"
   lane :beta do
-    # Get the keychain path (setup_ci already created it)
-    keychain_name = "fastlane_tmp_keychain"
+    keychain_name = "ark_drop_ci_keychain"
+    keychain_password = "ark-drop-ci-keychain"
     keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
 
     UI.important "📥 Importing certificate manually..."
@@ -26,16 +26,26 @@ platform :ios do
     end
     UI.message "✅ cert.p12 exists (#{File.size(cert_path)} bytes)"
 
+    if ENV['CI']
+      UI.important "🔐 Creating temporary CI keychain..."
+      sh("security delete-keychain '#{keychain_path}' >/dev/null 2>&1 || true")
+      sh("security create-keychain -p '#{keychain_password}' '#{keychain_path}'")
+      sh("security set-keychain-settings -lut 3600 '#{keychain_path}'")
+      sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
+      sh("security list-keychains -d user -s '#{keychain_path}'")
+      sh("security default-keychain -s '#{keychain_path}'")
+    end
+
     # Import certificate using security command directly
     # Use -A to allow all applications to access this item
-    sh("security import '#{cert_path}' -k #{keychain_path} -P '#{ENV['IOS_P12_PASSWORD']}' -A")
+    sh("security import '#{cert_path}' -k '#{keychain_path}' -P '#{ENV['IOS_P12_PASSWORD']}' -A")
 
     # Set key partition list for the keychain (allow codesign to access without prompting)
-    sh("security set-key-partition-list -S apple-tool:,apple:,codesign: -k '' #{keychain_path}")
+    sh("security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k '#{keychain_password}' '#{keychain_path}'")
 
     # Verify certificate was imported
     UI.important "🔍 Verifying certificate import..."
-    sh("security find-identity -v -p codesigning #{keychain_path}")
+    sh("security find-identity -v -p codesigning '#{keychain_path}'")
 
     # Additional debugging: Check ALL certificates and keys in keychain
     UI.important "🔍 Checking ALL items in keychain..."
@@ -51,10 +61,10 @@ platform :ios do
 
     # Ensure keychain is in search path and unlocked
     UI.important "🔓 Configuring keychain..."
-    sh("security list-keychains -d user -s #{keychain_path} ~/Library/Keychains/login.keychain")
-    sh("security default-keychain -s #{keychain_path}")
-    sh("security unlock-keychain -p '' #{keychain_path}")
-    sh("security set-keychain-settings -lut 3600 #{keychain_path}")
+    sh("security list-keychains -d user -s '#{keychain_path}'")
+    sh("security default-keychain -s '#{keychain_path}'")
+    sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
+    sh("security set-keychain-settings -lut 3600 '#{keychain_path}'")
 
     # Install provisioning profile manually
     UI.important "📱 Installing provisioning profile..."

@@ -167,6 +167,6 @@ Drop respects your privacy:
 - No data is collected or stored on external servers
 - All transfers are direct device-to-device over internet
 - Files are encrypted during transfer
-- No analytics or tracking
+- Privacy-preserving analytics only: aggregate transfer events, counts, coarse size buckets, durations, and error categories; never file contents, file names, paths, transfer tickets, confirmation codes, peer names, profile names, or avatars
 
 For more details, see our [Privacy Policy](PRIVACY.md).

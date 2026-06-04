@@ -214,4 +214,6 @@ jobs:
 
             - name: Cleanup
               if: always()
-              run: rm -f cert.p12 profile.mobileprovision profile.plist build/Bundled-GoogleService-Info.plist ~/.fastlane/AuthKey.p8
+              run: |
+                  rm -f cert.p12 profile.mobileprovision profile.plist build/Bundled-GoogleService-Info.plist ~/.fastlane/AuthKey.p8
+                  security delete-keychain "$HOME/Library/Keychains/ark_drop_ci_keychain-db" >/dev/null 2>&1 || true
