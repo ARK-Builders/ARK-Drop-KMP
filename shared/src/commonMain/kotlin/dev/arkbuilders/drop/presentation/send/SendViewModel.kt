@@ -169,7 +169,9 @@ class SendViewModel(
             firebaseReporter.log("SendViewModel: session created")
 
             if (ticket.isEmpty()) {
-                firebaseReporter.recordError("SendViewModel: empty transfer code received from bridge")
+                firebaseReporter.recordError(
+                    "SendViewModel: empty transfer code received from bridge",
+                )
                 analyticsReporter.logEvent(
                     AnalyticsEvents.SEND_FAILED,
                     mapOf(
