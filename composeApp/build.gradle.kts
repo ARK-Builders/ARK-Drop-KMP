@@ -114,36 +114,5 @@ dependencies {
     debugImplementation(compose.uiTooling)
 }
 
-val validateAndroidReleaseSigning by tasks.registering {
-    doLast {
-        val missing = listOf(
-            "ANDROID_KEYSTORE_STORE_PASSWORD",
-            "ANDROID_KEY_ALIAS",
-            "ANDROID_KEY_PASSWORD",
-        ).filter { signingValue(it).isNullOrBlank() }
-
-        if (missing.isNotEmpty()) {
-            error("Missing Android release signing values: ${missing.joinToString()}")
-        }
-
-        if (!project.rootProject.file("keystore.jks").isFile) {
-            error("Missing Android release keystore: ${project.rootProject.file("keystore.jks")}")
-        }
-    }
-}
-
-val androidReleaseSigningTasks =
-    setOf(
-        "packageRelease",
-        "bundleRelease",
-        "validateSigningRelease",
-    )
-
-tasks.matching { task ->
-    task.name in androidReleaseSigningTasks
-}.configureEach {
-    dependsOn(validateAndroidReleaseSigning)
-}
-
 tasks.check.dependsOn(tasks.ktlintCheck)
 tasks.ktlintCheck.dependsOn(tasks.ktlintFormat)

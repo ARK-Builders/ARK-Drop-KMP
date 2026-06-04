@@ -144,8 +144,11 @@ platform :ios do
       UI.user_error!("EXPECTED_FIREBASE_PROJECT_ID is required")
     end
 
-    bundled_firebase_plist = "./build/Bundled-GoogleService-Info.plist"
-    sh("unzip -p './build/ARK-Drop.ipa' 'Payload/*.app/GoogleService-Info.plist' > '#{bundled_firebase_plist}'")
+    repo_root = File.expand_path("..", __dir__)
+    ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH] || File.join(repo_root, "build", "ARK-Drop.ipa")
+    bundled_firebase_plist = File.join(repo_root, "build", "Bundled-GoogleService-Info.plist")
+    sh("mkdir -p '#{File.dirname(bundled_firebase_plist)}'")
+    sh("unzip -p '#{ipa_path}' 'Payload/*.app/GoogleService-Info.plist' > '#{bundled_firebase_plist}'")
     sh("plutil -lint '#{bundled_firebase_plist}'")
 
     bundled_project_id = sh("/usr/libexec/PlistBuddy -c 'Print :PROJECT_ID' '#{bundled_firebase_plist}'").strip

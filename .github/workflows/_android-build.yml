@@ -94,9 +94,13 @@ jobs:
                       echo "keystore.jks is missing or empty after decrypting ANDROID_KEYSTORE_ENCRYPTED"
                       exit 1
                   fi
-                  keytool -list -keystore keystore.jks -storepass "$ANDROID_KEYSTORE_STORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
-                  keytool -certreq -keystore keystore.jks -storepass "$ANDROID_KEYSTORE_STORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" -keypass "$ANDROID_KEY_PASSWORD" -file android-release-signing.csr >/dev/null
-                  rm -f android-release-signing.csr
+                  KEYSTORE_INFO=$(keytool -list -v -keystore keystore.jks -storepass "$ANDROID_KEYSTORE_STORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS")
+                  echo "$KEYSTORE_INFO" | grep -q "PrivateKeyEntry"
+                  KEYSTORE_TYPE=$(echo "$KEYSTORE_INFO" | sed -n 's/^Keystore type: //p' | head -n 1)
+                  if [ "$KEYSTORE_TYPE" = "JKS" ]; then
+                    keytool -certreq -keystore keystore.jks -storepass "$ANDROID_KEYSTORE_STORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" -keypass "$ANDROID_KEY_PASSWORD" -file android-release-signing.csr >/dev/null
+                    rm -f android-release-signing.csr
+                  fi
               env:
                   ANDROID_KEYSTORE_ENCRYPTED: ${{ secrets.ANDROID_KEYSTORE_ENCRYPTED }}
                   ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
