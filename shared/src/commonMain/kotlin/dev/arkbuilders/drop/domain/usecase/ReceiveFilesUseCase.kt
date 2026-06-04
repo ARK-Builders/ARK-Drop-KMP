@@ -28,7 +28,8 @@ class ReceiveFilesUseCase(
 
                 val profile = profileRepo.profile.first()
                 firebaseReporter.log(
-                    "ReceiveFilesUseCase: profile loaded hasAvatar=${profile.avatar.base64.isNotEmpty()}",
+                    "ReceiveFilesUseCase: profile loaded " +
+                        "hasAvatar=${profile.avatar.base64.isNotEmpty()}",
                 )
 
                 val receiverProfile =

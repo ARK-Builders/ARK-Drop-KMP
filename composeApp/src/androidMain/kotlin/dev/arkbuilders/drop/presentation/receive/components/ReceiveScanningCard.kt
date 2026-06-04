@@ -213,7 +213,8 @@ private fun processImageProxy(
                     when (barcode.valueType) {
                         Barcode.TYPE_TEXT, Barcode.TYPE_URL -> {
                             barcode.rawValue?.let { value ->
-                                // Parse Drop QR code format: drop://receive?ticket=...&confirmation=...
+                                // Parse Drop QR code format:
+                                // drop://receive?ticket=...&confirmation=...
                                 if (value.startsWith("drop://receive?")) {
                                     try {
                                         val uri = value.toUri()

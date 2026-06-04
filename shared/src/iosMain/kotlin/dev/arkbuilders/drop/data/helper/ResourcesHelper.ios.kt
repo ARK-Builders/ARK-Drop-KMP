@@ -164,7 +164,10 @@ actual class ResourcesHelper {
         crashlytics_log("ResourcesHelper: generateQRCode")
         return try {
             if (ticket.isEmpty()) {
-                crashlytics_recordError("ResourcesHelper: generateQRCode - empty transfer code", null)
+                crashlytics_recordError(
+                    "ResourcesHelper: generateQRCode - empty transfer code",
+                    null,
+                )
                 throw IllegalArgumentException("Ticket cannot be empty")
             }
 
