@@ -161,6 +161,38 @@ platform :ios do
       UI.user_error!("Bundled Firebase BUNDLE_ID mismatch. Expected #{ENV['APP_BUNDLE_ID']}, got #{bundled_bundle_id}")
     end
 
+    dsym_paths = [
+      lane_context[SharedValues::DSYM_OUTPUT_PATH],
+      *Dir[File.join(repo_root, "build", "*.dSYM.zip")],
+      *Dir[File.join(repo_root, "build", "*.dSYM")],
+      *Dir[File.join(repo_root, "build", "*.xcarchive", "dSYMs", "*.dSYM")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/SourcePackages/artifacts/**/*.dSYM.zip")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/SourcePackages/artifacts/**/*.dSYM")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/SourcePackages/checkouts/**/*.dSYM.zip")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/SourcePackages/checkouts/**/*.dSYM")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/Build/Intermediates.noindex/ArchiveIntermediates/**/*.dSYM")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/Build/Products/**/*.dSYM")]
+    ].compact.uniq.select { |path| File.exist?(path) }
+    if dsym_paths.empty?
+      UI.user_error!("dSYM output not found for Crashlytics upload")
+    end
+
+    upload_symbols = (
+      Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols")] +
+      Dir[File.join(repo_root, "**/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols")] +
+      Dir[File.join(repo_root, "**/FirebaseCrashlytics/upload-symbols")]
+    ).first
+    if upload_symbols.to_s.empty? || !File.exist?(upload_symbols)
+      UI.user_error!("Firebase Crashlytics upload-symbols script not found")
+    end
+
+    firebase_plist = File.join(repo_root, "iosApp/iosApp/GoogleService-Info.plist")
+    UI.important "📤 Uploading dSYM to Firebase Crashlytics..."
+    sh("chmod +x '#{upload_symbols}'")
+    dsym_paths.each do |dsym_path|
+      sh("'#{upload_symbols}' -gsp '#{firebase_plist}' -p ios '#{dsym_path}'")
+    end
+
     UI.success "✅ Build completed successfully!"
 
     # Upload to TestFlight
