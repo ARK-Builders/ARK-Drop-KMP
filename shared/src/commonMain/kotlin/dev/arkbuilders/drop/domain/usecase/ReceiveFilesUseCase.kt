@@ -23,14 +23,13 @@ class ReceiveFilesUseCase(
     ): Result<DropReceiveFilesBubble> =
         withContext(Dispatchers.IO) {
             runCatching {
-                firebaseReporter.setCustomKey("receive_ticket", ticket)
-                firebaseReporter.log(
-                    "ReceiveFilesUseCase: invoked with ticket=$ticket confirmation=$confirmation",
-                )
-                Logger.d("Starting file receive with ticket: $ticket")
+                firebaseReporter.log("ReceiveFilesUseCase: invoked")
+                Logger.d("Starting file receive")
 
                 val profile = profileRepo.profile.first()
-                firebaseReporter.log("ReceiveFilesUseCase: profile loaded name=${profile.name}")
+                firebaseReporter.log(
+                    "ReceiveFilesUseCase: profile loaded hasAvatar=${profile.avatar.base64.isNotEmpty()}",
+                )
 
                 val receiverProfile =
                     DropReceiverProfile(
@@ -66,7 +65,7 @@ class ReceiveFilesUseCase(
                 bubble
             }.onFailure { e ->
                 Logger.e("Error starting file receive ${e.message}")
-                firebaseReporter.recordError("ReceiveFilesUseCase: failed ticket=$ticket", e)
+                firebaseReporter.recordError("ReceiveFilesUseCase: failed", e)
             }
         }
 }

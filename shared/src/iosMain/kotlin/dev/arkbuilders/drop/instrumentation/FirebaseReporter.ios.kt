@@ -5,7 +5,6 @@ package dev.arkbuilders.drop.instrumentation
 import dev.arkbuilders.drop.bridge.crashlytics_log
 import dev.arkbuilders.drop.bridge.crashlytics_recordError
 import dev.arkbuilders.drop.bridge.crashlytics_setCustomKey
-import dev.arkbuilders.drop.bridge.crashlytics_setUserId
 
 actual class FirebaseReporter {
     actual fun recordError(
@@ -25,9 +24,5 @@ actual class FirebaseReporter {
         value: String,
     ) {
         crashlytics_setCustomKey(key, value)
-    }
-
-    actual fun setUserId(userId: String) {
-        crashlytics_setUserId(userId)
     }
 }

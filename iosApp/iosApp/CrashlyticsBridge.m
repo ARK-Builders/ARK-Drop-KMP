@@ -31,9 +31,3 @@ void crashlytics_setCustomKey(const char *key, const char *value) {
     NSString *v = value != NULL ? [NSString stringWithUTF8String:value] : @"";
     [[FIRCrashlytics crashlytics] setCustomValue:v forKey:k];
 }
-
-void crashlytics_setUserId(const char *userId) {
-    if (userId == NULL) return;
-    NSString *uid = [NSString stringWithUTF8String:userId];
-    [[FIRCrashlytics crashlytics] setUserID:uid];
-}

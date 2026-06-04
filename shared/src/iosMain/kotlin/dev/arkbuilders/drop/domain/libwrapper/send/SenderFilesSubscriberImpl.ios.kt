@@ -48,7 +48,6 @@ class SendFilesSubscriberImpl {
     ) {
         crashlytics_log(
             "SendFilesSubscriber: updateSendingProgress " +
-                "fileName=$fileName " +
                 "sent=$sent " +
                 "remaining=$remaining",
         )
@@ -67,7 +66,7 @@ class SendFilesSubscriberImpl {
         receiverName: String,
         receiverAvatar: String?,
     ) {
-        crashlytics_log("SendFilesSubscriber: updateConnectionStatus receiverName=$receiverName")
+        crashlytics_log("SendFilesSubscriber: updateConnectionStatus receiver connected")
         _progress.value =
             _progress.value.copy(
                 isConnected = true,

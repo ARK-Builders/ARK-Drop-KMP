@@ -46,6 +46,9 @@ struct HomeView: View {
             .onReceive(viewModel.effectPublisher) { effect in
                 handleEffect(effect)
             }
+            .onChange(of: coordinator.path.count) { count in
+                coordinator.reconcilePath(count: count)
+            }
         }
     }
     

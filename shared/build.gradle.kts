@@ -37,29 +37,38 @@ kotlin {
         iosTarget.compilations.getByName("main") {
             val iosAppPath = rootProject.projectDir.resolve("iosApp/iosApp")
 
-            val arkDropBridgeCinterop =
-                cinterops.create("ArkDropBridge") {
-                    defFile(project.file("src/nativeInterop/cinterop/ArkDropBridge.def"))
-                    packageName("dev.arkbuilders.drop.bridge")
-                    compilerOpts(
-                        "-framework",
-                        "Foundation",
-                        "-I${iosAppPath.absolutePath}",
-                    )
-                    includeDirs(iosAppPath.absolutePath)
-                }
+            cinterops.create("ArkDropBridge") {
+                defFile(project.file("src/nativeInterop/cinterop/ArkDropBridge.def"))
+                packageName("dev.arkbuilders.drop.bridge")
+                compilerOpts(
+                    "-framework",
+                    "Foundation",
+                    "-I${iosAppPath.absolutePath}",
+                )
+                includeDirs(iosAppPath.absolutePath)
+            }
 
-            val crashlyticsBridgeCinterop =
-                cinterops.create("CrashlyticsBridge") {
-                    defFile(project.file("src/nativeInterop/cinterop/CrashlyticsBridge.def"))
-                    packageName("dev.arkbuilders.drop.bridge")
-                    compilerOpts(
-                        "-framework",
-                        "Foundation",
-                        "-I${iosAppPath.absolutePath}",
-                    )
-                    includeDirs(iosAppPath.absolutePath)
-                }
+            cinterops.create("CrashlyticsBridge") {
+                defFile(project.file("src/nativeInterop/cinterop/CrashlyticsBridge.def"))
+                packageName("dev.arkbuilders.drop.bridge")
+                compilerOpts(
+                    "-framework",
+                    "Foundation",
+                    "-I${iosAppPath.absolutePath}",
+                )
+                includeDirs(iosAppPath.absolutePath)
+            }
+
+            cinterops.create("AnalyticsBridge") {
+                defFile(project.file("src/nativeInterop/cinterop/AnalyticsBridge.def"))
+                packageName("dev.arkbuilders.drop.bridge")
+                compilerOpts(
+                    "-framework",
+                    "Foundation",
+                    "-I${iosAppPath.absolutePath}",
+                )
+                includeDirs(iosAppPath.absolutePath)
+            }
 
             // Ensure cinterop runs before Kotlin compilation
             compileTaskProvider.configure {
@@ -68,6 +77,10 @@ kotlin {
                 )
                 dependsOn(
                     "cinteropCrashlyticsBridge" +
+                        iosTarget.name.replaceFirstChar { it.uppercase() },
+                )
+                dependsOn(
+                    "cinteropAnalyticsBridge" +
                         iosTarget.name.replaceFirstChar { it.uppercase() },
                 )
             }
@@ -119,6 +132,7 @@ kotlin {
                 implementation(libs.timber)
                 implementation(project.dependencies.platform(libs.firebase.bom))
                 implementation(libs.firebase.crashlytics)
+                implementation(libs.firebase.analytics)
             }
         }
 

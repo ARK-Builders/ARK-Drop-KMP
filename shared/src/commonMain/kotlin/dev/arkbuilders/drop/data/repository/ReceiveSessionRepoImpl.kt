@@ -35,9 +35,7 @@ class ReceiveSessionRepoImpl(
         confirmation: UByte,
     ): ReceiveSession? =
         withContext(Dispatchers.IO) {
-            firebaseReporter.log(
-                "ReceiveSessionRepo: receiveFiles ticket=$ticket confirmation=$confirmation",
-            )
+            firebaseReporter.log("ReceiveSessionRepo: receiveFiles")
 
             receiveFilesUseCase.invoke(ticket, confirmation).fold(
                 onSuccess = { bubble ->
@@ -72,7 +70,7 @@ class ReceiveSessionRepoImpl(
                 },
                 onFailure = { e ->
                     firebaseReporter.recordError(
-                        "ReceiveSessionRepo: receiveFiles failed ticket=$ticket",
+                        "ReceiveSessionRepo: receiveFiles failed",
                         e,
                     )
                     return@withContext null
@@ -94,19 +92,16 @@ class ReceiveSessionRepoImpl(
                 completeFiles.forEach { (fileInfo, data) ->
                     firebaseReporter.log(
                         "ReceiveSessionRepo: " +
-                            "saving file name=${fileInfo.name} size=${fileInfo.size}",
+                            "saving file size=${fileInfo.size}",
                     )
                     val savedFile = resourcesHelper.saveFileToDownloads(fileInfo.name, data)
                     if (savedFile != null) {
                         savedFiles.add(DropFileInfo(savedFile, fileInfo.size.toLong()))
-                        Logger.i("Saved file name: $savedFile")
-                        firebaseReporter.log("ReceiveSessionRepo: file saved path=$savedFile")
+                        Logger.i("Saved received file")
+                        firebaseReporter.log("ReceiveSessionRepo: file saved")
                     } else {
-                        Logger.e("Failed to save file: ${fileInfo.name}")
-                        firebaseReporter.recordError(
-                            "ReceiveSessionRepo: failed to save file name=${fileInfo.name}",
-                            null,
-                        )
+                        Logger.e("Failed to save received file")
+                        firebaseReporter.recordError("ReceiveSessionRepo: failed to save file")
                     }
                 }
 
@@ -117,7 +112,7 @@ class ReceiveSessionRepoImpl(
                 if (savedFiles.isNotEmpty()) {
                     firebaseReporter.log(
                         "ReceiveSessionRepo: adding completed transfer to history " +
-                            "files=${savedFiles.size} sender=$senderName",
+                            "files=${savedFiles.size}",
                     )
 
                     transferHistoryRepository.addReceivedTransfer(

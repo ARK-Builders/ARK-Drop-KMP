@@ -10,6 +10,7 @@ class AppConfiguration {
     /// Initialize the app - call this on app launch
     func initialize() {
         initializeKoin()
+        KoinHelper.shared.logAppStart(platform: "ios")
         configureLogging()
     }
     

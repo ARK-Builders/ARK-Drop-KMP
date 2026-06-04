@@ -69,8 +69,6 @@ class ReceiveFilesSubscriberImpl {
                         val length = data.length.toInt()
                         crashlytics_log(
                             "ReceiveFilesSubscriber: complete " +
-                                "file id=${fileInfo.id} " +
-                                "name=${fileInfo.name} " +
                                 "bytes=$length",
                         )
                         val bytes = ByteArray(length)
@@ -84,7 +82,7 @@ class ReceiveFilesSubscriberImpl {
                     } else {
                         crashlytics_recordError(
                             "ReceiveFilesSubscriber: " +
-                                "complete file missing data id=${fileInfo.id}",
+                                "complete file missing data",
                             null,
                         )
                         null
@@ -106,7 +104,7 @@ class ReceiveFilesSubscriberImpl {
         data: ByteArray,
     ) {
         crashlytics_log(
-            "ReceiveFilesSubscriber: appendReceivedData fileId=$fileId chunkSize=${data.size}",
+            "ReceiveFilesSubscriber: appendReceivedData chunkSize=${data.size}",
         )
 
         val existingData =
@@ -128,8 +126,6 @@ class ReceiveFilesSubscriberImpl {
 
             crashlytics_log(
                 "ReceiveFilesSubscriber: file progress " +
-                    "id=$fileId " +
-                    "name=${fileInfo.name} " +
                     "received=$receivedBytes " +
                     "total=$totalSize " +
                     "complete=$isComplete",
@@ -149,7 +145,7 @@ class ReceiveFilesSubscriberImpl {
         } else {
             crashlytics_log(
                 "ReceiveFilesSubscriber: " +
-                    "fileId=$fileId not in expected file list, buffering data size=${data.size}",
+                    "file not in expected file list, buffering data size=${data.size}",
             )
         }
     }

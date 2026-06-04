@@ -58,7 +58,7 @@ struct QRScannerView: View {
     }
     
     private func handleScannedCode(_ code: String) {
-        print("📷 QR Code scanned: \(code)")
+        print("QR Code scanned, length=\(code.count)")
         let reporter = KoinHelper.shared.getFirebaseReporter()
         reporter.log(message: "QRScanner: code scanned length=\(code.count)")
         
@@ -68,7 +68,7 @@ struct QRScannerView: View {
               url.host == "receive",
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let queryItems = components.queryItems else {
-            print("⚠️ Invalid QR code format: \(code)")
+            print("Invalid QR code format")
             reporter.log(message: "QRScanner: invalid QR code format")
             return
         }
@@ -78,13 +78,13 @@ struct QRScannerView: View {
               let confirmationItem = queryItems.first(where: { $0.name == "confirmation" }),
               let confirmationString = confirmationItem.value,
               let confirmation = UInt8(confirmationString) else {
-            print("⚠️ Missing ticket or confirmation in QR code")
-            reporter.recordError(message: "QRScanner: missing ticket or confirmation in QR code", throwable: nil)
+            print("Missing transfer code in QR code")
+            reporter.recordError(message: "QRScanner: missing transfer code in QR code", throwable: nil)
             return
         }
         
-        print("✅ Parsed QR: ticket=\(ticket), confirmation=\(confirmation)")
-        reporter.log(message: "QRScanner: parsed ticket=\(ticket) confirmation=\(confirmation)")
+        print("Parsed QR")
+        reporter.log(message: "QRScanner: parsed QR code")
         onCodeScanned(ticket, confirmation)
         scanner.stopScanning()
     }
@@ -200,7 +200,7 @@ class QRScanner: NSObject, ObservableObject, AVCaptureMetadataOutputObjectsDeleg
 #Preview {
     QRScannerView(
         onCodeScanned: { ticket, conf in
-            print("Scanned: \(ticket) \(conf)")
+            print("Scanned QR code")
         },
         onCancel: {}
     )

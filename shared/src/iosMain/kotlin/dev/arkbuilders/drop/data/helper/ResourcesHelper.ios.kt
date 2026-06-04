@@ -43,10 +43,10 @@ actual class ResourcesHelper {
                     ?: NSURL.URLWithString(uri)
                     ?: return null
             val name = url.lastPathComponent
-            crashlytics_log("ResourcesHelper: getFileName - uri: $uri -> name: $name")
+            crashlytics_log("ResourcesHelper: getFileName succeeded")
             name
         } catch (e: Exception) {
-            crashlytics_recordError("ResourcesHelper: getFileName failed for: $uri", e.message)
+            crashlytics_recordError("ResourcesHelper: getFileName failed", e.message)
             null
         }
     }
@@ -61,17 +61,17 @@ actual class ResourcesHelper {
                 if (size in 1..2_000_000_000L) { // 2GB limit
                     validFiles.add(uri)
                     crashlytics_log(
-                        "ResourcesHelper: validateUris - valid: $uri, size: $size bytes",
+                        "ResourcesHelper: validateUris - valid file size=$size bytes",
                     )
                 } else {
                     crashlytics_log(
                         "ResourcesHelper: validateUris - skipped (size out of range): " +
-                            "$uri, size: $size",
+                            "size=$size",
                     )
                     skippedCount++
                 }
             } catch (_: Exception) {
-                crashlytics_log("ResourcesHelper: validateUris - skipped (exception): $uri")
+                crashlytics_log("ResourcesHelper: validateUris - skipped (exception)")
                 skippedCount++
             }
         }
@@ -105,8 +105,6 @@ actual class ResourcesHelper {
         val uniqueName = getUniqueFileName(fileName)
         crashlytics_log(
             "ResourcesHelper: saveFileToDownloads - " +
-                "originalName=$fileName " +
-                "uniqueName=$uniqueName " +
                 "dataSize=${data.size}",
         )
 
@@ -144,9 +142,7 @@ actual class ResourcesHelper {
                 }
             val success = nsData.writeToURL(fileURL, atomically = true)
             if (success) {
-                crashlytics_log(
-                    "ResourcesHelper: saveFileToDownloads - saved successfully path=$uniqueName",
-                )
+                crashlytics_log("ResourcesHelper: saveFileToDownloads - saved successfully")
             } else {
                 crashlytics_recordError(
                     "ResourcesHelper: saveFileToDownloads - writeToURL returned false",
@@ -165,17 +161,14 @@ actual class ResourcesHelper {
         ticket: String,
         confirmation: UByte,
     ): ByteArray? {
-        crashlytics_log(
-            "ResourcesHelper: generateQRCode - ticket: $ticket, confirmation: $confirmation",
-        )
+        crashlytics_log("ResourcesHelper: generateQRCode")
         return try {
             if (ticket.isEmpty()) {
-                crashlytics_recordError("ResourcesHelper: generateQRCode - empty ticket", null)
+                crashlytics_recordError("ResourcesHelper: generateQRCode - empty transfer code", null)
                 throw IllegalArgumentException("Ticket cannot be empty")
             }
 
             val qrData = "drop://receive?ticket=$ticket&confirmation=$confirmation"
-            crashlytics_log("ResourcesHelper: generateQRCode - data: $qrData")
             val data = qrData.encodeToNSData()
 
             val filter = CIFilter.filterWithName("CIQRCodeGenerator")
@@ -232,7 +225,7 @@ actual class ResourcesHelper {
     }
 
     actual fun mapToSenderFileData(uri: String): DropSenderFileData {
-        crashlytics_log("ResourcesHelper: mapToSenderFileData - uri: $uri")
+        crashlytics_log("ResourcesHelper: mapToSenderFileData")
         return SenderFileDataImpl(uri)
     }
 

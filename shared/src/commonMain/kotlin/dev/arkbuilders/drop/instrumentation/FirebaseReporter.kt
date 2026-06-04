@@ -12,6 +12,4 @@ expect class FirebaseReporter {
         key: String,
         value: String,
     )
-
-    fun setUserId(userId: String)
 }

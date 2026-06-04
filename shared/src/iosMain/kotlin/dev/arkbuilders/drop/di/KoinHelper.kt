@@ -1,5 +1,7 @@
 package dev.arkbuilders.drop.di
 
+import dev.arkbuilders.drop.instrumentation.AnalyticsEvents
+import dev.arkbuilders.drop.instrumentation.AnalyticsReporter
 import dev.arkbuilders.drop.instrumentation.FirebaseReporter
 import dev.arkbuilders.drop.presentation.edit.EditProfileViewModel
 import dev.arkbuilders.drop.presentation.history.HistoryViewModel
@@ -42,5 +44,29 @@ object KoinHelper : KoinComponent {
     fun getFirebaseReporter(): FirebaseReporter {
         val reporter: FirebaseReporter by inject()
         return reporter
+    }
+
+    fun logAppStart(platform: String) {
+        val reporter: AnalyticsReporter by inject()
+        reporter.logEvent(
+            AnalyticsEvents.APP_START,
+            mapOf(AnalyticsEvents.PARAM_PLATFORM to platform),
+        )
+    }
+
+    fun logScreenView(screenName: String) {
+        val reporter: AnalyticsReporter by inject()
+        reporter.logEvent(
+            AnalyticsEvents.SCREEN_VIEW,
+            mapOf(
+                AnalyticsEvents.PARAM_SCREEN_NAME to screenName,
+                AnalyticsEvents.PARAM_SCREEN_CLASS to screenName,
+            ),
+        )
+    }
+
+    fun logSendCodeCopied() {
+        val reporter: AnalyticsReporter by inject()
+        reporter.logEvent(AnalyticsEvents.SEND_CODE_COPIED)
     }
 }

@@ -49,11 +49,8 @@ import platform.darwin.NSObject
  */
 object ArkDropBridgeWrapper {
     suspend fun sendFiles(request: DropSendFilesRequest): DropSendFilesBubble {
-        val fileNames = request.files.map { it.name }
         crashlytics_log(
             "ArkDropBridgeWrapper: sendFiles - " +
-                "profile: ${request.profile.name}, " +
-                "files: $fileNames, " +
                 "fileCount: ${request.files.size}",
         )
         crashlytics_log(
@@ -73,7 +70,6 @@ object ArkDropBridgeWrapper {
                 val fileData = ArkDropSenderFileDataAdapter(file.data)
                 crashlytics_log(
                     "ArkDropBridgeWrapper: bridging file - " +
-                        "name: ${file.name}, " +
                         "dataLen: ${file.data.len()}",
                 )
                 ArkDropSenderFile().apply {
@@ -122,11 +118,7 @@ object ArkDropBridgeWrapper {
                 }
 
                 val bubble = bubblePtr.value ?: throw Exception("Failed to create send bubble")
-                crashlytics_log(
-                    "ArkDropBridgeWrapper: bridge returned bubble successfully - " +
-                        "ticket: ${bubble.getTicket()}, " +
-                        "confirmation: ${bubble.getConfirmation()}",
-                )
+                crashlytics_log("ArkDropBridgeWrapper: bridge returned send bubble successfully")
                 ArkDropSendFilesBubbleWrapper(bubble)
             }
         }
@@ -135,9 +127,6 @@ object ArkDropBridgeWrapper {
     suspend fun receiveFiles(request: DropReceiveFilesRequest): DropReceiveFilesBubble {
         crashlytics_log(
             "ArkDropBridgeWrapper: receiveFiles - " +
-                "ticket: ${request.ticket}, " +
-                "confirmation: ${request.confirmation}, " +
-                "profile: ${request.profile.name}, " +
                 "chunkSize: ${request.config.chunkSize}, " +
                 "parallelStreams: ${request.config.parallelStreams}",
         )

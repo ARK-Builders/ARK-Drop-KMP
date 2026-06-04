@@ -42,7 +42,7 @@ class DropSendFilesBubbleImpl(
 
     override fun getConfirmation(): UByte {
         val confirmation = bubble.getConfirmation()
-        crashlytics_log("DropSendFilesBubble: getConfirmation=$confirmation")
+        crashlytics_log("DropSendFilesBubble: getConfirmation")
         return confirmation
     }
 
@@ -54,7 +54,7 @@ class DropSendFilesBubbleImpl(
 
     override fun getTicket(): String {
         val ticket = bubble.getTicket()
-        crashlytics_log("DropSendFilesBubble: getTicket=$ticket")
+        crashlytics_log("DropSendFilesBubble: getTicket")
         return ticket
     }
 
@@ -109,7 +109,6 @@ private class ArkDropSendFilesSubscriberAdapter(
     ) {
         crashlytics_log(
             "ArkDropSendFilesSubscriberAdapter: sending progress " +
-                "name=$name " +
                 "sent=$sent " +
                 "remaining=$remaining",
         )
@@ -120,7 +119,7 @@ private class ArkDropSendFilesSubscriberAdapter(
         receiverName: String,
         receiverAvatarB64: String?,
     ) {
-        crashlytics_log("ArkDropSendFilesSubscriberAdapter: connecting to receiver=$receiverName")
+        crashlytics_log("ArkDropSendFilesSubscriberAdapter: connecting to receiver")
         native.updateConnectionStatus(receiverName, receiverAvatarB64)
     }
 }

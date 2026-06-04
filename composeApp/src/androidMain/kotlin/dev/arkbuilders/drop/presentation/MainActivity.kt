@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -17,6 +18,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
 import dev.arkbuilders.drop.domain.repository.ProfileRepo
 import dev.arkbuilders.drop.domain.repository.TransferSessionRepo
+import dev.arkbuilders.drop.instrumentation.AnalyticsEvents
+import dev.arkbuilders.drop.instrumentation.AnalyticsReporter
 import dev.arkbuilders.drop.presentation.history.History
 import dev.arkbuilders.drop.presentation.home.Home
 import dev.arkbuilders.drop.presentation.navigation.DropDestination
@@ -32,9 +35,15 @@ class MainActivity : ComponentActivity() {
 
     private val transferSessionRepo: TransferSessionRepo = get()
 
+    private val analyticsReporter: AnalyticsReporter = get()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        analyticsReporter.logEvent(
+            AnalyticsEvents.APP_START,
+            mapOf(AnalyticsEvents.PARAM_PLATFORM to "android"),
+        )
 
         setContent {
             DropTheme {
@@ -50,6 +59,7 @@ class MainActivity : ComponentActivity() {
                                 .padding(innerPadding),
                         profileRepo = profileRepo,
                         transferSessionRepo = transferSessionRepo,
+                        analyticsReporter = analyticsReporter,
                     )
                 }
             }
@@ -63,7 +73,23 @@ fun DropNavigation(
     navController: NavHostController = rememberNavController(),
     profileRepo: ProfileRepo,
     transferSessionRepo: TransferSessionRepo,
+    analyticsReporter: AnalyticsReporter,
 ) {
+    LaunchedEffect(navController) {
+        navController.currentBackStackEntryFlow.collect { backStackEntry ->
+            val screenName = backStackEntry.destination.route?.toAnalyticsScreenName()
+            if (screenName != null) {
+                analyticsReporter.logEvent(
+                    AnalyticsEvents.SCREEN_VIEW,
+                    mapOf(
+                        AnalyticsEvents.PARAM_SCREEN_NAME to screenName,
+                        AnalyticsEvents.PARAM_SCREEN_CLASS to screenName,
+                    ),
+                )
+            }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = DropDestination.Home.route,
@@ -90,6 +116,13 @@ fun DropNavigation(
                     },
                 ),
         ) {
+            val ticket = it.arguments?.getString("ticket").orEmpty()
+            val confirmation = it.arguments?.getString("confirmation").orEmpty()
+            LaunchedEffect(ticket, confirmation) {
+                if (ticket.isNotEmpty() || confirmation.isNotEmpty()) {
+                    analyticsReporter.logEvent(AnalyticsEvents.RECEIVE_DEEP_LINK_OPENED)
+                }
+            }
             Receive(
                 navController = navController,
             )
@@ -112,3 +145,14 @@ fun DropNavigation(
         }
     }
 }
+
+private fun String.toAnalyticsScreenName(): String? =
+    when (this) {
+        DropDestination.Home.route -> "home"
+        DropDestination.Send.route -> "send"
+        DropDestination.Receive.route -> "receive"
+        DropDestination.History.route -> "history"
+        DropDestination.EditProfile.route -> "edit_profile"
+        DropDestination.About.route -> "about"
+        else -> null
+    }

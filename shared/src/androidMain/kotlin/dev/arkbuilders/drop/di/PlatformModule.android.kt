@@ -11,6 +11,7 @@ import dev.arkbuilders.drop.data.helper.PermissionsHelper
 import dev.arkbuilders.drop.data.helper.ResourcesHelper
 import dev.arkbuilders.drop.data.settings.DATASTORE_FILENAME
 import dev.arkbuilders.drop.data.settings.createDataStore
+import dev.arkbuilders.drop.instrumentation.AnalyticsReporter
 import dev.arkbuilders.drop.instrumentation.FirebaseReporter
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidApplication
@@ -25,6 +26,10 @@ actual val platformModule: Module =
         single { PermissionsHelper(androidContext()) }
         single { ResourcesHelper(androidContext()) }
         single { FirebaseReporter() }
+        single {
+            AnalyticsReporter.initialize(androidContext())
+            AnalyticsReporter()
+        }
 
         single<DropDatabase> {
             val dbFile = androidApplication().getDatabasePath(DropDatabase.DB_NAME)

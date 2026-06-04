@@ -91,7 +91,7 @@ private class ArkDropReceiveFilesSubscriberAdapter(
     ) {
         val length = data.length.toInt()
         crashlytics_log(
-            "ArkDropReceiveFilesSubscriberAdapter: receiving data fileId=$fileId bytes=$length",
+            "ArkDropReceiveFilesSubscriberAdapter: receiving data bytes=$length",
         )
         val bytes = ByteArray(length)
         bytes.usePinned { pinned ->
@@ -107,7 +107,7 @@ private class ArkDropReceiveFilesSubscriberAdapter(
     ) {
         crashlytics_log(
             "ArkDropReceiveFilesSubscriberAdapter: " +
-                "connected to sender=$senderName fileCount=${files.size}",
+                "connected to sender fileCount=${files.size}",
         )
 
         val fileInfos =
@@ -127,14 +127,10 @@ private class ArkDropReceiveFilesSubscriberAdapter(
         crashlytics_log(
             "ArkDropReceiveFilesSubscriberAdapter: parsed fileInfos count=${fileInfos.size}",
         )
-        fileInfos.forEach { info ->
-            crashlytics_log(
-                "ArkDropReceiveFilesSubscriberAdapter: " +
-                    "file id=${info.id} " +
-                    "name=${info.name} " +
-                    "size=${info.size}",
-            )
-        }
+        val totalBytes = fileInfos.sumOf { it.size.toLong() }
+        crashlytics_log(
+            "ArkDropReceiveFilesSubscriberAdapter: fileInfos totalBytes=$totalBytes",
+        )
 
         val currentProgress = native.progress.value
         native.progressMutable.value =

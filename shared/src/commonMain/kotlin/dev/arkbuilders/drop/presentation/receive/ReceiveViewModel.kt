@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package dev.arkbuilders.drop.presentation.receive
 
 import androidx.lifecycle.ViewModel
@@ -6,6 +8,8 @@ import co.touchlab.kermit.Logger
 import dev.arkbuilders.drop.data.helper.PermissionsHelper
 import dev.arkbuilders.drop.domain.model.ReceiveSession
 import dev.arkbuilders.drop.domain.repository.ReceiveSessionRepo
+import dev.arkbuilders.drop.instrumentation.AnalyticsEvents
+import dev.arkbuilders.drop.instrumentation.AnalyticsReporter
 import dev.arkbuilders.drop.instrumentation.FirebaseReporter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
@@ -14,14 +18,21 @@ import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.blockingIntent
 import org.orbitmvi.orbit.viewmodel.container
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 class ReceiveViewModel(
     private val receiveSessionRepo: ReceiveSessionRepo,
     private val permissionsHelper: PermissionsHelper,
     private val firebaseReporter: FirebaseReporter,
+    private val analyticsReporter: AnalyticsReporter,
 ) : ViewModel(), ContainerHost<ReceiveScreenState, ReceiveScreenEffect> {
     override val container: Container<ReceiveScreenState, ReceiveScreenEffect> =
         container(ReceiveScreenState.Initial(false))
+
+    private var receiveStartedAtMs: Long? = null
+    private var receiveSenderConnectedLogged = false
+    private var receiveSource = AnalyticsEvents.SOURCE_UNKNOWN
 
     init {
         firebaseReporter.log("ReceiveViewModel: initialized")
@@ -46,6 +57,8 @@ class ReceiveViewModel(
     fun onEnterManually() =
         intent {
             firebaseReporter.log("ReceiveViewModel: entering manual input mode")
+            receiveSource = AnalyticsEvents.SOURCE_MANUAL
+            analyticsReporter.logEvent(AnalyticsEvents.RECEIVE_MANUAL_INPUT_STARTED)
             reduce {
                 ReceiveScreenState.ManualInput(inputText = "", inputError = null)
             }
@@ -54,6 +67,8 @@ class ReceiveViewModel(
     fun onStartScanning() =
         intent {
             firebaseReporter.log("ReceiveViewModel: starting QR scanner")
+            receiveSource = AnalyticsEvents.SOURCE_QR
+            analyticsReporter.logEvent(AnalyticsEvents.RECEIVE_SCAN_STARTED)
             reduce {
                 ReceiveScreenState.Scanning
             }
@@ -70,6 +85,13 @@ class ReceiveViewModel(
     fun onError(error: ReceiveError) =
         intent {
             firebaseReporter.recordError("ReceiveViewModel: error state error=${error.name}", null)
+            analyticsReporter.logEvent(
+                AnalyticsEvents.RECEIVE_FAILED,
+                mapOf(
+                    AnalyticsEvents.PARAM_PHASE to "ui",
+                    AnalyticsEvents.PARAM_ERROR_TYPE to error.name.lowercase(),
+                ),
+            )
             reduce {
                 ReceiveScreenState.Error(error = error)
             }
@@ -88,8 +110,12 @@ class ReceiveViewModel(
                 val ticket = s.ticket
                 val confirmation = s.confirmation
 
-                firebaseReporter.log(
-                    "ReceiveViewModel: accept triggered ticket=$ticket confirmation=$confirmation",
+                firebaseReporter.log("ReceiveViewModel: accept triggered")
+                receiveStartedAtMs = Clock.System.now().toEpochMilliseconds()
+                receiveSenderConnectedLogged = false
+                analyticsReporter.logEvent(
+                    AnalyticsEvents.RECEIVE_STARTED,
+                    mapOf(AnalyticsEvents.PARAM_SOURCE to receiveSource),
                 )
 
                 reduce {
@@ -116,12 +142,27 @@ class ReceiveViewModel(
                         "ReceiveViewModel: receiveFiles returned null session",
                         null,
                     )
+                    analyticsReporter.logEvent(
+                        AnalyticsEvents.RECEIVE_FAILED,
+                        mapOf(
+                            AnalyticsEvents.PARAM_PHASE to "connection",
+                            AnalyticsEvents.PARAM_ERROR_TYPE to "session_creation_failed",
+                        ),
+                    )
                     reduce {
                         ReceiveScreenState.Error(error = ReceiveError.ConnectionFailed)
                     }
                 }
             } catch (e: Exception) {
                 firebaseReporter.recordError("ReceiveViewModel: onAccept exception", e)
+                analyticsReporter.logEvent(
+                    AnalyticsEvents.RECEIVE_FAILED,
+                    mapOf(
+                        AnalyticsEvents.PARAM_PHASE to "connection",
+                        AnalyticsEvents.PARAM_ERROR_TYPE to
+                            (e::class.simpleName ?: "unknown_error"),
+                    ),
+                )
                 val error =
                     when {
                         e.message?.contains(
@@ -141,6 +182,10 @@ class ReceiveViewModel(
     fun onCameraPermissionGranted(isGranted: Boolean) =
         intent {
             firebaseReporter.log("ReceiveViewModel: camera permission result granted=$isGranted")
+            analyticsReporter.logEvent(
+                AnalyticsEvents.CAMERA_PERMISSION_RESULT,
+                mapOf(AnalyticsEvents.PARAM_GRANTED to isGranted),
+            )
             val state =
                 if (isGranted) {
                     ReceiveScreenState.Scanning
@@ -171,6 +216,7 @@ class ReceiveViewModel(
             firebaseReporter.log("ReceiveViewModel: receive more")
             val s = state
             if (s is ReceiveScreenState.Success) {
+                analyticsReporter.logEvent(AnalyticsEvents.RECEIVE_MORE_SELECTED)
                 receiveSessionRepo.cancelReceive(s.session)
             }
             reduce {
@@ -198,12 +244,22 @@ class ReceiveViewModel(
                 firebaseReporter.log(
                     "ReceiveViewModel: pasting from clipboard length=${clipText.length}",
                 )
+                analyticsReporter.logEvent(
+                    AnalyticsEvents.RECEIVE_CLIPBOARD_PASTED,
+                    mapOf(AnalyticsEvents.PARAM_HAS_TEXT to true),
+                )
                 reduce {
                     s.copy(
                         inputText = clipText,
                         inputError = null,
                     )
                 }
+            }
+            if (clipText.isNullOrEmpty()) {
+                analyticsReporter.logEvent(
+                    AnalyticsEvents.RECEIVE_CLIPBOARD_PASTED,
+                    mapOf(AnalyticsEvents.PARAM_HAS_TEXT to false),
+                )
             }
         }
 
@@ -231,8 +287,11 @@ class ReceiveViewModel(
         ticket: String,
         confirmation: UByte,
     ) = intent {
-        firebaseReporter.log(
-            "ReceiveViewModel: QR code scanned ticket=$ticket confirmation=$confirmation",
+        firebaseReporter.log("ReceiveViewModel: QR code scanned")
+        receiveSource = AnalyticsEvents.SOURCE_QR
+        analyticsReporter.logEvent(
+            AnalyticsEvents.RECEIVE_CODE_ENTERED,
+            mapOf(AnalyticsEvents.PARAM_SOURCE to AnalyticsEvents.SOURCE_QR),
         )
         reduce {
             ReceiveScreenState.QRCodeScanned(ticket, confirmation)
@@ -258,6 +317,10 @@ class ReceiveViewModel(
             firebaseReporter.log("ReceiveViewModel: cancelling receiving")
             val s = state
             if (s is ReceiveScreenState.Receiving) {
+                analyticsReporter.logEvent(
+                    AnalyticsEvents.RECEIVE_CANCELLED,
+                    mapOf(AnalyticsEvents.PARAM_PHASE to "receiving"),
+                )
                 receiveSessionRepo.cancelReceive(s.session)
             }
 
@@ -269,6 +332,10 @@ class ReceiveViewModel(
     fun onCancelManualInput() =
         intent {
             firebaseReporter.log("ReceiveViewModel: cancelling manual input")
+            analyticsReporter.logEvent(
+                AnalyticsEvents.RECEIVE_CANCELLED,
+                mapOf(AnalyticsEvents.PARAM_PHASE to "manual_input"),
+            )
             reduce {
                 ReceiveScreenState.Initial(permissionsHelper.isCameraGranted())
             }
@@ -281,11 +348,14 @@ class ReceiveViewModel(
             if (s !is ReceiveScreenState.ManualInput)
                 return@intent
 
-            firebaseReporter.log("ReceiveViewModel: manual input submitted input=${s.inputText}")
+            firebaseReporter.log("ReceiveViewModel: manual input submitted")
             val parsed = parseManualInput(s.inputText)
             if (parsed != null) {
-                firebaseReporter.log(
-                    "ReceiveViewModel: manual input parsed successfully ticket=${parsed.first}",
+                firebaseReporter.log("ReceiveViewModel: manual input parsed successfully")
+                receiveSource = AnalyticsEvents.SOURCE_MANUAL
+                analyticsReporter.logEvent(
+                    AnalyticsEvents.RECEIVE_CODE_ENTERED,
+                    mapOf(AnalyticsEvents.PARAM_SOURCE to AnalyticsEvents.SOURCE_MANUAL),
                 )
                 reduce {
                     ReceiveScreenState.QRCodeScanned(
@@ -296,6 +366,13 @@ class ReceiveViewModel(
                 postSideEffect(ReceiveScreenEffect.HideKeyboard)
             } else {
                 firebaseReporter.log("ReceiveViewModel: manual input parse failed")
+                analyticsReporter.logEvent(
+                    AnalyticsEvents.RECEIVE_FAILED,
+                    mapOf(
+                        AnalyticsEvents.PARAM_PHASE to "manual_input",
+                        AnalyticsEvents.PARAM_ERROR_TYPE to "invalid_code",
+                    ),
+                )
                 reduce {
                     s.copy(
                         inputError = "Invalid format. Please enter: ticket confirmation",
@@ -318,6 +395,20 @@ class ReceiveViewModel(
                 }
 
                 if (progress.isConnected && progress.files.isNotEmpty()) {
+                    if (!receiveSenderConnectedLogged) {
+                        receiveSenderConnectedLogged = true
+                        val totalBytes = progress.files.sumOf { it.size.toLong() }
+                        analyticsReporter.logEvent(
+                            AnalyticsEvents.RECEIVE_SENDER_CONNECTED,
+                            mapOf(
+                                AnalyticsEvents.PARAM_FILE_COUNT to progress.files.size,
+                                AnalyticsEvents.PARAM_TOTAL_BYTES to totalBytes,
+                                AnalyticsEvents.PARAM_TOTAL_SIZE_BUCKET to
+                                    AnalyticsEvents.sizeBucket(totalBytes),
+                            ),
+                        )
+                    }
+
                     // Check if all files are complete
                     val completedCount =
                         progress.files.count { file ->
@@ -326,7 +417,6 @@ class ReceiveViewModel(
                     firebaseReporter.log(
                         "ReceiveViewModel: progress " +
                             "connected=${progress.isConnected} " +
-                            "sender=${progress.senderName} " +
                             "files=${progress.files.size} " +
                             "completed=$completedCount",
                     )
@@ -347,8 +437,24 @@ class ReceiveViewModel(
                         try {
                             val savedFiles = receiveSessionRepo.saveReceivedFiles(session)
                             if (savedFiles.isNotEmpty()) {
+                                val totalBytes = progress.files.sumOf { it.size.toLong() }
                                 firebaseReporter.log(
                                     "ReceiveViewModel: saved ${savedFiles.size} files successfully",
+                                )
+                                analyticsReporter.logEvent(
+                                    AnalyticsEvents.RECEIVE_COMPLETED,
+                                    mapOf(
+                                        AnalyticsEvents.PARAM_FILE_COUNT to
+                                            savedFiles.size,
+                                        AnalyticsEvents.PARAM_TOTAL_BYTES to totalBytes,
+                                        AnalyticsEvents.PARAM_TOTAL_SIZE_BUCKET to
+                                            AnalyticsEvents.sizeBucket(totalBytes),
+                                        AnalyticsEvents.PARAM_DURATION_MS to
+                                            AnalyticsEvents.durationSince(
+                                                receiveStartedAtMs,
+                                                Clock.System.now().toEpochMilliseconds(),
+                                            ),
+                                    ),
                                 )
                                 reduce {
                                     ReceiveScreenState.Success(
@@ -361,6 +467,13 @@ class ReceiveViewModel(
                                     "ReceiveViewModel: no files received",
                                     null,
                                 )
+                                analyticsReporter.logEvent(
+                                    AnalyticsEvents.RECEIVE_FAILED,
+                                    mapOf(
+                                        AnalyticsEvents.PARAM_PHASE to "saving",
+                                        AnalyticsEvents.PARAM_ERROR_TYPE to "no_files_received",
+                                    ),
+                                )
                                 reduce {
                                     ReceiveScreenState.Error(
                                         session = session,
@@ -371,6 +484,14 @@ class ReceiveViewModel(
                         } catch (e: Exception) {
                             Logger.w("Save failed: ${e::class.simpleName} ${e.message}")
                             firebaseReporter.recordError("ReceiveViewModel: save failed", e)
+                            analyticsReporter.logEvent(
+                                AnalyticsEvents.RECEIVE_FAILED,
+                                mapOf(
+                                    AnalyticsEvents.PARAM_PHASE to "saving",
+                                    AnalyticsEvents.PARAM_ERROR_TYPE to
+                                        (e::class.simpleName ?: "unknown_error"),
+                                ),
+                            )
                             val error =
                                 when {
                                     e.message?.contains("storage", ignoreCase = true) == true ->
@@ -391,8 +512,7 @@ class ReceiveViewModel(
                     }
                 } else if (progress.isConnected) {
                     firebaseReporter.log(
-                        "ReceiveViewModel: connected to " +
-                            "sender=${progress.senderName} waiting for files...",
+                        "ReceiveViewModel: connected to sender waiting for files",
                     )
                 }
             }

@@ -33,10 +33,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Copy
+import dev.arkbuilders.drop.instrumentation.AnalyticsEvents
+import dev.arkbuilders.drop.instrumentation.AnalyticsReporter
 import dev.arkbuilders.drop.presentation.send.components.ButtonSize
 import dev.arkbuilders.drop.presentation.send.components.ButtonVariant
 import dev.arkbuilders.drop.presentation.send.components.SendButton
 import dev.arkbuilders.drop.presentation.send.components.SendLoadingIndicator
+import org.koin.compose.koinInject
 
 @Composable
 fun WaitingForReceiverPhase(
@@ -46,6 +49,7 @@ fun WaitingForReceiverPhase(
     onCancel: () -> Unit,
 ) {
     val context = LocalContext.current
+    val analyticsReporter: AnalyticsReporter = koinInject()
     val bitmap =
         remember(qrBitmap) {
             BitmapFactory.decodeByteArray(qrBitmap, 0, qrBitmap.size)
@@ -99,6 +103,7 @@ fun WaitingForReceiverPhase(
         SendButton(
             onClick = {
                 copyToClipboard(context, copyString)
+                analyticsReporter.logEvent(AnalyticsEvents.SEND_CODE_COPIED)
                 Toast.makeText(context, "Code copied!", Toast.LENGTH_SHORT).show()
             },
             variant = ButtonVariant.Secondary,

@@ -46,11 +46,9 @@ class SendSessionRepoImpl(
                         }
 
                     val session = SendSession(bubble, subscriber)
-                    val ticket = bubble.getTicket()
-                    firebaseReporter.setCustomKey("send_ticket_$ticket", "active")
                     firebaseReporter.log(
                         "SendSessionRepo: session created - " +
-                            "ticket: $ticket, activeSessions: ${activeSessions.size + 1}",
+                            "activeSessions: ${activeSessions.size + 1}",
                     )
 
                     activeSessionsMutex.withLock {
@@ -83,19 +81,15 @@ class SendSessionRepoImpl(
             val totalSent = progress.sent
             val totalRemaining = progress.remaining
 
-            firebaseReporter.setCustomKey("send_receiver", receiverName)
             firebaseReporter.log(
                 "SendSessionRepo: transfer completed - " +
-                    "receiver: $receiverName, sent: $totalSent, remaining: $totalRemaining",
+                    "sent: $totalSent, remaining: $totalRemaining",
             )
 
             val filesInfo =
                 fileUris.map {
                     val name = resourcesHelper.getFileName(it) ?: ""
                     val size = resourcesHelper.getFileSize(it)
-                    firebaseReporter.log(
-                        "SendSessionRepo: recording file - name: $name, size: $size",
-                    )
                     DropFileInfo(
                         name = name,
                         size = size,
@@ -109,11 +103,7 @@ class SendSessionRepoImpl(
                 status = TransferStatus.COMPLETED,
             )
 
-            val ticket = session.bubble.getTicket()
-            firebaseReporter.setCustomKey("send_ticket_$ticket", "completed")
-            firebaseReporter.log(
-                "SendSessionRepo: send completion recorded successfully - ticket: $ticket",
-            )
+            firebaseReporter.log("SendSessionRepo: send completion recorded successfully")
         } catch (e: Exception) {
             firebaseReporter.recordError(
                 "SendSessionRepo: error recording send completion - ${e.message}",
@@ -124,8 +114,7 @@ class SendSessionRepoImpl(
     }
 
     override fun cancelSend(session: SendSession) {
-        val ticket = session.bubble.getTicket()
-        firebaseReporter.log("SendSessionRepo: cancelling send - ticket: $ticket")
+        firebaseReporter.log("SendSessionRepo: cancelling send")
 
         cancelScope.launch {
             try {
@@ -134,13 +123,10 @@ class SendSessionRepoImpl(
                 }
                 session.bubble.unsubscribe(session.subscriber)
                 session.bubble.cancel()
-                firebaseReporter.log(
-                    "SendSessionRepo: send cancelled successfully - ticket: $ticket",
-                )
-                firebaseReporter.setCustomKey("send_ticket_$ticket", "cancelled")
+                firebaseReporter.log("SendSessionRepo: send cancelled successfully")
             } catch (e: Throwable) {
                 firebaseReporter.recordError(
-                    "SendSessionRepo: error during cancel - ticket: $ticket, error: ${e.message}",
+                    "SendSessionRepo: error during cancel - ${e::class.simpleName}",
                     e,
                 )
                 Logger.e("Error cancelling send ${e.message}")

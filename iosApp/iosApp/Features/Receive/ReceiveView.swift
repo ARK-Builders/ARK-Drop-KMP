@@ -63,7 +63,7 @@ struct ReceiveView: View {
                         onCancel: viewModel.onScanAgain
                     )
                     .onAppear {
-                        reporter.log(message: "ReceiveView: state=QRCodeScanned ticket=\(state.ticket)")
+                        reporter.log(message: "ReceiveView: state=QRCodeScanned")
                     }
                     
                 case is ReceiveScreenState.Connecting:
@@ -304,7 +304,7 @@ struct QRScannedView: View {
                 DropButton(
                     title: "Accept Transfer",
                     action: {
-                        reporter.log(message: "QRScannedView: accept tapped ticket=\(ticket)")
+                        reporter.log(message: "QRScannedView: accept tapped")
                         onAccept()
                     },
                     style: .primary
@@ -349,7 +349,7 @@ struct ReceivingView: View {
                         .font(AppTypography.titleLarge)
                 }
                 .onAppear {
-                    reporter.log(message: "ReceivingView: connected to sender=\(state.progress.senderName) files=\(state.progress.files.count)")
+                    reporter.log(message: "ReceivingView: connected to sender files=\(state.progress.files.count)")
                 }
             }
             
@@ -366,7 +366,7 @@ struct ReceivingView: View {
                             isComplete: isComplete
                         )
                         .onAppear {
-                            reporter.log(message: "ReceivingView: file name=\(file.name) size=\(file.size) received=\(receivedBytes) complete=\(isComplete)")
+                            reporter.log(message: "ReceivingView: file size=\(file.size) received=\(receivedBytes) complete=\(isComplete)")
                         }
                     }
                 }
@@ -641,10 +641,10 @@ class ReceiveViewModelWrapper: ObservableObject {
     }
     
     func onQrCodeScanned(ticket: String, confirmation: UInt8) {
-        print("🔄 ReceiveViewModelWrapper.onQrCodeScanned: ticket=\(ticket), confirmation=\(confirmation)")
-        reporter.log(message: "ReceiveViewModelWrapper: onQrCodeScanned ticket=\(ticket) confirmation=\(confirmation)")
+        print("ReceiveViewModelWrapper.onQrCodeScanned")
+        reporter.log(message: "ReceiveViewModelWrapper: onQrCodeScanned")
         viewModel.onQrCodeScanned(ticket: ticket, confirmation: confirmation)
-        print("✅ Called viewModel.onQrCodeScanned")
+        print("Called viewModel.onQrCodeScanned")
     }
     
     func onManualInputChanged(_ input: String) {

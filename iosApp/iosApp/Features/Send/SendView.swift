@@ -43,7 +43,7 @@ struct SendView: View {
                         onCancel: viewModel.onCancelTransfer
                     )
                     .onAppear {
-                        reporter.log(message: "SendView: state=WaitingForReceiver ticket=\(state.session.bubble.getTicket())")
+                        reporter.log(message: "SendView: state=WaitingForReceiver")
                     }
                     
                 case let state as SendScreenState.Transfer:
@@ -52,7 +52,7 @@ struct SendView: View {
                         onCancel: viewModel.onCancelTransfer
                     )
                     .onAppear {
-                        reporter.log(message: "SendView: state=Transfer receiver=\(state.receiverName) file=\(state.currentFileName) progress=\(state.bytesTransferred)/\(state.totalBytes)")
+                        reporter.log(message: "SendView: state=Transfer progress=\(state.bytesTransferred)/\(state.totalBytes)")
                     }
                     
                 case let state as SendScreenState.Complete:
@@ -96,9 +96,9 @@ struct SendView: View {
                     if url.startAccessingSecurityScopedResource() {
                         accessiblePaths.append(url.path)
                         viewModel.trackAccessedURL(url)
-                        reporter.log(message: "SendView: accessed file - \(url.lastPathComponent), size: \(url.fileSize) bytes")
+                        reporter.log(message: "SendView: accessed file size=\(url.fileSize) bytes")
                     } else {
-                        reporter.log(message: "SendView: failed to access security-scoped resource - \(url.lastPathComponent)")
+                        reporter.log(message: "SendView: failed to access security-scoped resource")
                     }
                 }
                 reporter.log(message: "SendView: added \(accessiblePaths.count) accessible files to viewModel")
@@ -297,6 +297,7 @@ struct WaitingForReceiverView: View {
                     
                     Button(action: {
                         UIPasteboard.general.string = state.copyString
+                        KoinHelper.shared.logSendCodeCopied()
                     }) {
                         Image(systemName: "doc.on.doc")
                             .foregroundColor(.dropPrimary)
@@ -565,7 +566,7 @@ class SendViewModelWrapper: ObservableObject {
     }
     
     func onFileRemove(_ file: String) {
-        reporter.log(message: "SendViewModelWrapper: onFileRemove - path: \(file)")
+        reporter.log(message: "SendViewModelWrapper: onFileRemove")
         viewModel.onFileRemove(file: file)
     }
     

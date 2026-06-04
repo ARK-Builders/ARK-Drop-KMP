@@ -26,8 +26,4 @@ actual class FirebaseReporter {
     ) {
         instance.setCustomKey(key, value)
     }
-
-    actual fun setUserId(userId: String) {
-        instance.setUserId(userId)
-    }
 }
