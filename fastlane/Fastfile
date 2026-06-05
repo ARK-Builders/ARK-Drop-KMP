@@ -1,0 +1,249 @@
+# Fastfile for ARK Drop (KMP) iOS App
+
+default_platform(:ios)
+
+platform :ios do
+  # Environment variables
+  before_all do
+    ENV['MATCH_READONLY'] = 'true' if ENV['CI']
+  end
+
+  desc "Push a new beta build to TestFlight"
+  lane :beta do
+    keychain_name = "ark_drop_ci_keychain"
+    keychain_password = "ark-drop-ci-keychain"
+    keychain_path = File.expand_path("~/Library/Keychains/#{keychain_name}-db")
+
+    UI.important "📥 Importing certificate manually..."
+
+    # Files are in parent directory (workflow creates them in repo root, fastlane runs from fastlane/ subdir)
+    cert_path = File.expand_path("../cert.p12")
+    profile_path = File.expand_path("../profile.mobileprovision")
+
+    # Verify cert.p12 exists
+    unless File.exist?(cert_path)
+      UI.user_error!("❌ cert.p12 file not found at: #{cert_path}")
+    end
+    UI.message "✅ cert.p12 exists (#{File.size(cert_path)} bytes)"
+
+    if ENV['CI']
+      UI.important "🔐 Creating temporary CI keychain..."
+      sh("security delete-keychain '#{keychain_path}' >/dev/null 2>&1 || true")
+      sh("security create-keychain -p '#{keychain_password}' '#{keychain_path}'")
+      sh("security set-keychain-settings -lut 3600 '#{keychain_path}'")
+      sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
+      sh("security list-keychains -d user -s '#{keychain_path}'")
+      sh("security default-keychain -s '#{keychain_path}'")
+    end
+
+    # Import certificate using security command directly
+    # Use -A to allow all applications to access this item
+    sh("security import '#{cert_path}' -k '#{keychain_path}' -P '#{ENV['IOS_P12_PASSWORD']}' -A")
+
+    # Set key partition list for the keychain (allow codesign to access without prompting)
+    sh("security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k '#{keychain_password}' '#{keychain_path}'")
+
+    # Verify certificate was imported
+    UI.important "🔍 Verifying certificate import..."
+    sh("security find-identity -v -p codesigning '#{keychain_path}'")
+
+    # Additional debugging: Check ALL certificates and keys in keychain
+    UI.important "🔍 Checking ALL items in keychain..."
+    sh("security dump-keychain #{keychain_path} | head -50") rescue UI.message("Could not dump keychain")
+
+    # Check certificate details from the p12
+    UI.important "🔍 Certificate details from p12 file:"
+    sh("openssl pkcs12 -in '#{cert_path}' -legacy -passin pass:'#{ENV['IOS_P12_PASSWORD']}' -nokeys 2>&1 | openssl x509 -noout -subject -dates -fingerprint") rescue UI.message("Could not read p12")
+
+    # Check for private key in keychain
+    UI.important "🔍 Checking for private keys in keychain:"
+    sh("security dump-keychain #{keychain_path} | grep -A5 'class.*0x00000011' || echo 'No private keys found'") rescue nil
+
+    # Ensure keychain is in search path and unlocked
+    UI.important "🔓 Configuring keychain..."
+    sh("security list-keychains -d user -s '#{keychain_path}'")
+    sh("security default-keychain -s '#{keychain_path}'")
+    sh("security unlock-keychain -p '#{keychain_password}' '#{keychain_path}'")
+    sh("security set-keychain-settings -lut 3600 '#{keychain_path}'")
+
+    # Install provisioning profile manually
+    UI.important "📱 Installing provisioning profile..."
+
+    # Verify profile file exists
+    unless File.exist?(profile_path)
+      UI.user_error!("❌ profile.mobileprovision file not found at: #{profile_path}")
+    end
+    UI.message "✅ profile.mobileprovision exists (#{File.size(profile_path)} bytes)"
+
+    # Create directory if it doesn't exist
+    profiles_dir = File.expand_path("~/Library/MobileDevice/Provisioning Profiles")
+    sh("mkdir -p '#{profiles_dir}'")
+
+    # Get profile UUID
+    profile_uuid = sh("security cms -D -i '#{profile_path}' | plutil -extract UUID raw -").strip
+    UI.message "📋 Profile UUID: #{profile_uuid}"
+
+    # Copy profile to the correct location with UUID as filename
+    sh("cp '#{profile_path}' '#{profiles_dir}/#{profile_uuid}.mobileprovision'")
+
+    # Store profile UUID for build step
+    ENV['PROVISIONING_PROFILE_UUID'] = profile_uuid
+
+    # Verify profile was installed
+    UI.important "🔍 Verifying profile installation..."
+    sh("ls -la '#{profiles_dir}'")
+
+    # Increment build number (using timestamp to avoid conflicts)
+    increment_build_number(
+      build_number: Time.now.to_i.to_s,
+      xcodeproj: "iosApp/iosApp.xcodeproj"
+    )
+
+    # Get the App Store Connect API Key
+    api_key = app_store_connect_api_key(
+      key_id: ENV['ASC_KEY_ID'],
+      issuer_id: ENV['ASC_ISSUER_ID'],
+      key_filepath: "~/.fastlane/AuthKey.p8",
+      duration: 1200,
+      in_house: false
+    )
+
+    # Build the app (project in iosApp/ subdirectory)
+    # Use project settings for code signing (Manual for app, Automatic for SPM)
+    UI.important "🔨 Starting build with verbose logging..."
+    UI.important "Configuration: Release"
+    UI.important "Scheme: iosApp"
+    UI.important "Bundle ID: #{ENV['APP_BUNDLE_ID']}"
+    UI.important "Team ID: #{ENV['APP_TEAM_ID']}"
+
+    build_app(
+      scheme: "iosApp",
+      project: "iosApp/iosApp.xcodeproj",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "ARK-Drop.ipa",
+      verbose: true,
+      buildlog_path: "./build/logs",
+      # Skip macro validation in CI (Swift macros not enabled) and specify profile
+      xcargs: "-skipMacroValidation PROVISIONING_PROFILE_SPECIFIER=#{ENV['PROVISIONING_PROFILE_UUID']}",
+      # Export options to specify provisioning profile for IPA export
+      export_options: {
+        method: "app-store",
+        teamID: ENV['APP_TEAM_ID'],
+        provisioningProfiles: {
+          ENV['APP_BUNDLE_ID'] => ENV['PROVISIONING_PROFILE_UUID']
+        },
+        signingCertificate: "Apple Distribution",
+        signingStyle: "manual"
+      }
+    )
+
+    expected_firebase_project_id = ENV['EXPECTED_FIREBASE_PROJECT_ID']
+    if expected_firebase_project_id.to_s.empty?
+      UI.user_error!("EXPECTED_FIREBASE_PROJECT_ID is required")
+    end
+
+    repo_root = File.expand_path("..", __dir__)
+    ipa_path = lane_context[SharedValues::IPA_OUTPUT_PATH] || File.join(repo_root, "build", "ARK-Drop.ipa")
+    bundled_firebase_plist = File.join(repo_root, "build", "Bundled-GoogleService-Info.plist")
+    sh("mkdir -p '#{File.dirname(bundled_firebase_plist)}'")
+    sh("unzip -p '#{ipa_path}' 'Payload/*.app/GoogleService-Info.plist' > '#{bundled_firebase_plist}'")
+    sh("plutil -lint '#{bundled_firebase_plist}'")
+
+    bundled_project_id = sh("/usr/libexec/PlistBuddy -c 'Print :PROJECT_ID' '#{bundled_firebase_plist}'").strip
+    if bundled_project_id != expected_firebase_project_id
+      UI.user_error!("Bundled Firebase PROJECT_ID mismatch. Expected #{expected_firebase_project_id}, got #{bundled_project_id}")
+    end
+
+    bundled_bundle_id = sh("/usr/libexec/PlistBuddy -c 'Print :BUNDLE_ID' '#{bundled_firebase_plist}'").strip
+    if bundled_bundle_id != ENV['APP_BUNDLE_ID']
+      UI.user_error!("Bundled Firebase BUNDLE_ID mismatch. Expected #{ENV['APP_BUNDLE_ID']}, got #{bundled_bundle_id}")
+    end
+
+    dsym_paths = [
+      lane_context[SharedValues::DSYM_OUTPUT_PATH],
+      *Dir[File.join(repo_root, "build", "*.dSYM.zip")],
+      *Dir[File.join(repo_root, "build", "*.dSYM")],
+      *Dir[File.join(repo_root, "build", "*.xcarchive", "dSYMs", "*.dSYM")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/SourcePackages/artifacts/**/*.dSYM.zip")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/SourcePackages/artifacts/**/*.dSYM")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/SourcePackages/checkouts/**/*.dSYM.zip")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/SourcePackages/checkouts/**/*.dSYM")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/Build/Intermediates.noindex/ArchiveIntermediates/**/*.dSYM")],
+      *Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/Build/Products/**/*.dSYM")]
+    ].compact.uniq.select { |path| File.exist?(path) }
+    if dsym_paths.empty?
+      UI.user_error!("dSYM output not found for Crashlytics upload")
+    end
+
+    upload_symbols = (
+      Dir[File.expand_path("~/Library/Developer/Xcode/DerivedData/**/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols")] +
+      Dir[File.join(repo_root, "**/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols")] +
+      Dir[File.join(repo_root, "**/FirebaseCrashlytics/upload-symbols")]
+    ).first
+    if upload_symbols.to_s.empty? || !File.exist?(upload_symbols)
+      UI.user_error!("Firebase Crashlytics upload-symbols script not found")
+    end
+
+    firebase_plist = File.join(repo_root, "iosApp/iosApp/GoogleService-Info.plist")
+    UI.important "📤 Uploading dSYM to Firebase Crashlytics..."
+    sh("chmod +x '#{upload_symbols}'")
+    dsym_paths.each do |dsym_path|
+      sh("'#{upload_symbols}' -gsp '#{firebase_plist}' -p ios '#{dsym_path}'")
+    end
+
+    UI.success "✅ Build completed successfully!"
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true,
+      skip_submission: true,
+      distribute_external: false,
+      notify_external_testers: false,
+      ipa: "./build/ARK-Drop.ipa"
+    )
+  end
+
+  desc "Build the app for release"
+  lane :build do
+    # Increment build number
+    increment_build_number(
+      build_number: Time.now.to_i.to_s,
+      xcodeproj: "iosApp/iosApp.xcodeproj"
+    )
+
+    # Build the app
+    build_app(
+      scheme: "iosApp",
+      project: "iosApp/iosApp.xcodeproj",
+      configuration: "Release",
+      export_method: "app-store",
+      clean: true,
+      output_directory: "./build",
+      output_name: "ARK-Drop.ipa"
+    )
+  end
+
+  desc "Run tests"
+  lane :test do
+    run_tests(
+      scheme: "iosApp",
+      project: "iosApp/iosApp.xcodeproj",
+      devices: ["iPhone 15 Pro"]
+    )
+  end
+
+  # Error handling
+  error do |lane, exception|
+    UI.error("Error in lane #{lane}: #{exception.message}")
+
+    # Show the last 100 lines of the build log if it exists
+    build_log = Dir.glob("./build/logs/**/*.log").first
+    if build_log && File.exist?(build_log)
+      UI.important "📋 Last 100 lines of build log:"
+      sh("tail -100 '#{build_log}'") rescue nil
+    end
+  end
+end

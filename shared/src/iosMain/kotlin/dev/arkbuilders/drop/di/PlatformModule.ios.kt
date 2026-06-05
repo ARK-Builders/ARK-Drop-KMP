@@ -7,8 +7,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import dev.arkbuilders.drop.data.db.DropDatabase
+import dev.arkbuilders.drop.data.helper.AvatarHelper
+import dev.arkbuilders.drop.data.helper.NetworkStatus
+import dev.arkbuilders.drop.data.helper.PermissionsHelper
+import dev.arkbuilders.drop.data.helper.ResourcesHelper
 import dev.arkbuilders.drop.data.settings.DATASTORE_FILENAME
 import dev.arkbuilders.drop.data.settings.createDataStore
+import dev.arkbuilders.drop.instrumentation.AnalyticsReporter
+import dev.arkbuilders.drop.instrumentation.FirebaseReporter
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -20,6 +26,12 @@ import platform.Foundation.NSUserDomainMask
 
 actual val platformModule: Module =
     module {
+        single { AvatarHelper() }
+        single { NetworkStatus() }
+        single { PermissionsHelper() }
+        single { ResourcesHelper() }
+        single { FirebaseReporter() }
+        single { AnalyticsReporter() }
 
         single<DropDatabase> {
             val dbFilePath = documentDirectory() + "/${DropDatabase.DB_NAME}"

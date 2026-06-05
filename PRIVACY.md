@@ -6,14 +6,17 @@
 
 Drop ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we handle information when you use our mobile application.
 
-## Information We Don't Collect
+If you want maximum privacy, you can build Drop yourself from source. Self-built versions can omit Firebase Analytics entirely.
+
+## Information We Collect
 
 Drop is designed with privacy in mind:
 
-- **No Personal Data Collection**: We do not collect, store, or transmit any personal information
-- **No Analytics**: We do not use analytics services or tracking tools
+- **Privacy-Preserving Analytics**: We collect aggregate app usage events such as transfer started, transfer completed, transfer failed, file count, coarse file-size bucket, and duration
 - **No Advertising**: We do not display ads or work with advertising networks
 - **No Cloud Storage**: Files are never uploaded to our servers or any cloud service
+
+Analytics events never include file contents, file names, file paths, transfer tickets, confirmation codes, peer names, profile names, or avatars.
 
 ## How Drop Works
 
@@ -47,7 +50,7 @@ Drop requests the following permissions:
 
 ## Third-Party Services
 
-Drop does not integrate with any third-party services that collect data.
+Drop uses Firebase Analytics for aggregate product metrics and Firebase Crashlytics for crash diagnostics.
 
 ## Changes to This Policy
 
@@ -61,4 +64,8 @@ If you have any questions about this Privacy Policy, please contact us at:
 
 ## Your Rights
 
-Since we don't collect any personal data, there is no personal data to access, modify, or delete. All your data remains on your device under your control.
+We do not collect file contents or transfer secrets. Files, profiles, and transfer history remain on your device under your control.
+
+## Analytics Details
+
+Firebase Analytics events may include exact file counts, total transfer size in bytes, coarse file-size bucket, transfer duration, transfer phase, and error category. They do not include file contents, file names, file paths, transfer tickets, confirmation codes, peer names, profile names, or avatars.

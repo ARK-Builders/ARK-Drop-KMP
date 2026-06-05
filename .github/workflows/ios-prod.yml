@@ -1,0 +1,16 @@
+name: iOS Prod
+
+on:
+    push:
+        tags:
+            - 'v*'
+
+jobs:
+    ios:
+        uses: ./.github/workflows/_ios-testflight.yml
+        with:
+            environment_name: Production
+            expected_firebase_project_id: ark-drop-prod
+            artifact_name: ARK-Drop-iOS-Prod-${{ github.ref_name }}.ipa
+            log_artifact_name: ios-prod-build-logs
+        secrets: inherit

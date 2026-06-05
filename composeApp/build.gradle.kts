@@ -8,7 +8,14 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.ktlint.gradle)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
+
+fun signingValue(name: String): String? =
+    providers.environmentVariable(name)
+        .orElse(providers.gradleProperty(name))
+        .orNull
 
 kotlin {
     androidTarget {
@@ -44,6 +51,10 @@ kotlin {
             implementation(libs.material.icons.extended)
 
             implementation(libs.kotlinx.datetime)
+
+            implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.firebase.crashlytics)
+            implementation(libs.firebase.analytics)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -67,11 +78,11 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     signingConfigs {
-        create("testRelease") {
+        create("release") {
             storeFile = project.rootProject.file("keystore.jks")
-            storePassword = "sw0rdf1sh"
-            keyAlias = "ark-builders-test"
-            keyPassword = "rybamech"
+            storePassword = signingValue("ANDROID_KEYSTORE_STORE_PASSWORD")
+            keyAlias = signingValue("ANDROID_KEY_ALIAS")
+            keyPassword = signingValue("ANDROID_KEY_PASSWORD")
         }
     }
 
@@ -89,7 +100,7 @@ android {
     }
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("testRelease")
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
         }
     }

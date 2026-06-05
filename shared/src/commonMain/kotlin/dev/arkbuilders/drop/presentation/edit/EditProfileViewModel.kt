@@ -5,6 +5,8 @@ import dev.arkbuilders.drop.data.helper.AvatarHelper
 import dev.arkbuilders.drop.domain.model.UserAvatar
 import dev.arkbuilders.drop.domain.model.UserProfile
 import dev.arkbuilders.drop.domain.repository.ProfileRepo
+import dev.arkbuilders.drop.instrumentation.AnalyticsEvents
+import dev.arkbuilders.drop.instrumentation.AnalyticsReporter
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
@@ -35,6 +37,7 @@ sealed class EditProfileScreenEffect {
 class EditProfileViewModel(
     private val profileRepo: ProfileRepo,
     private val avatarHelper: AvatarHelper,
+    private val analyticsReporter: AnalyticsReporter,
 ) : ViewModel(), ContainerHost<EditProfileScreenState, EditProfileScreenEffect> {
     override val container: Container<EditProfileScreenState, EditProfileScreenEffect> =
         container(
@@ -75,6 +78,7 @@ class EditProfileViewModel(
 
     fun onPickImage() =
         intent {
+            analyticsReporter.logEvent(AnalyticsEvents.PROFILE_IMAGE_PICKER_OPENED)
             postSideEffect(EditProfileScreenEffect.LaunchImagePicker)
         }
 
@@ -108,6 +112,15 @@ class EditProfileViewModel(
 
     fun onSave() =
         intent {
+            analyticsReporter.logEvent(
+                AnalyticsEvents.PROFILE_SAVED,
+                mapOf(
+                    AnalyticsEvents.PARAM_CHANGED_NAME to
+                        (state.currentProfile.name != state.name),
+                    AnalyticsEvents.PARAM_CHANGED_AVATAR to
+                        (state.currentProfile.avatar != state.avatar),
+                ),
+            )
             profileRepo.updateProfile(UserProfile(state.name, state.avatar))
             postSideEffect(EditProfileScreenEffect.NavigateBack)
         }

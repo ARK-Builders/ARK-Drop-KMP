@@ -2,7 +2,19 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is needed to scan QR codes for receiving files</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access is needed to select files for transfer</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>ARK Drop needs local network access to discover nearby devices for direct file transfer</string>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>UISupportsDocumentBrowser</key>
 	<true/>
 </dict>
 </plist>

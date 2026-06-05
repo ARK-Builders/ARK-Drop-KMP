@@ -1,0 +1,174 @@
+name: Android Build
+
+on:
+    workflow_call:
+        inputs:
+            environment_name:
+                required: true
+                type: string
+            build_command:
+                required: true
+                type: string
+            expected_firebase_project_id:
+                required: true
+                type: string
+            run_ktlint:
+                required: false
+                type: boolean
+                default: false
+            run_lint:
+                required: false
+                type: boolean
+                default: false
+            use_keystore:
+                required: false
+                type: boolean
+                default: false
+            upload_artifact:
+                required: false
+                type: boolean
+                default: false
+            artifact_name:
+                required: false
+                type: string
+                default: android-build
+            artifact_path:
+                required: false
+                type: string
+                default: ./composeApp/build/outputs/apk/release/composeApp-release.apk
+            lint_artifact_name:
+                required: false
+                type: string
+                default: android-lint-results
+
+env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+    build:
+        environment: ${{ inputs.environment_name }}
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up JDK 17
+              uses: actions/setup-java@v4
+              with:
+                  java-version: '17'
+                  distribution: 'adopt'
+                  cache: gradle
+
+            - name: Validate Gradle wrapper
+              uses: gradle/actions/wrapper-validation@v3
+
+            - name: Run KtLint
+              if: ${{ inputs.run_ktlint }}
+              run: ./gradlew ktlintCheck
+
+            - name: Decrypt Android keystore
+              if: ${{ inputs.use_keystore }}
+              run: |
+                  set -euo pipefail
+                  missing=()
+                  for name in \
+                    ANDROID_KEYSTORE_ENCRYPTED \
+                    ANDROID_KEYSTORE_PASSWORD \
+                    ANDROID_KEYSTORE_STORE_PASSWORD \
+                    ANDROID_KEY_ALIAS \
+                    ANDROID_KEY_PASSWORD
+                  do
+                    if [ -z "${!name:-}" ]; then
+                      missing+=("$name")
+                    fi
+                  done
+
+                  if [ ${#missing[@]} -gt 0 ]; then
+                    printf 'Missing required Android signing secrets:\n'
+                    printf ' - %s\n' "${missing[@]}"
+                    exit 1
+                  fi
+
+                  printf '%s' "$ANDROID_KEYSTORE_ENCRYPTED" > keystore.asc
+                  gpg -d --passphrase "$ANDROID_KEYSTORE_PASSWORD" --batch keystore.asc > keystore.jks
+                  if [ ! -s keystore.jks ]; then
+                      echo "keystore.jks is missing or empty after decrypting ANDROID_KEYSTORE_ENCRYPTED"
+                      exit 1
+                  fi
+                  KEYSTORE_INFO=$(keytool -list -v -keystore keystore.jks -storepass "$ANDROID_KEYSTORE_STORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS")
+                  echo "$KEYSTORE_INFO" | grep -q "PrivateKeyEntry"
+                  KEYSTORE_TYPE=$(echo "$KEYSTORE_INFO" | sed -n 's/^Keystore type: //p' | head -n 1)
+                  if [ "$KEYSTORE_TYPE" = "JKS" ]; then
+                    keytool -certreq -keystore keystore.jks -storepass "$ANDROID_KEYSTORE_STORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" -keypass "$ANDROID_KEY_PASSWORD" -file android-release-signing.csr >/dev/null
+                    rm -f android-release-signing.csr
+                  fi
+              env:
+                  ANDROID_KEYSTORE_ENCRYPTED: ${{ secrets.ANDROID_KEYSTORE_ENCRYPTED }}
+                  ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+                  ANDROID_KEYSTORE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_STORE_PASSWORD }}
+                  ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+                  ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+            - name: Decode Android Firebase config
+              run: |
+                  set -euo pipefail
+                  if [ -z "${ANDROID_GOOGLE_SERVICES_JSON_BASE64:-}" ]; then
+                      echo "ANDROID_GOOGLE_SERVICES_JSON_BASE64 secret is missing or empty"
+                      exit 1
+                  fi
+                  echo "$ANDROID_GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > composeApp/google-services.json
+                  node - "${{ inputs.expected_firebase_project_id }}" <<'NODE'
+                  const fs = require("fs");
+                  const expectedProjectId = process.argv[2];
+                  const expectedPackage = "dev.arkbuilders.drop";
+                  const cfg = JSON.parse(fs.readFileSync("composeApp/google-services.json", "utf8"));
+                  const clients = cfg.client || [];
+                  if (!cfg.project_info || !cfg.project_info.project_id) {
+                    throw new Error("Missing project_info.project_id");
+                  }
+                  if (cfg.project_info.project_id !== expectedProjectId) {
+                    throw new Error(`Firebase project mismatch. Expected ${expectedProjectId}, got ${cfg.project_info.project_id}`);
+                  }
+                  const matchingClient = clients.find((client) =>
+                    client.client_info &&
+                    client.client_info.android_client_info &&
+                    client.client_info.android_client_info.package_name === expectedPackage
+                  );
+                  if (!matchingClient) {
+                    throw new Error(`Missing Firebase client for ${expectedPackage}`);
+                  }
+                  const appId = matchingClient.client_info.mobilesdk_app_id;
+                  if (!appId || !appId.includes(":android:")) {
+                    throw new Error("Firebase Android client is missing a valid mobilesdk_app_id");
+                  }
+                  const apiKeys = matchingClient.api_key || [];
+                  if (!apiKeys.some((apiKey) => apiKey.current_key)) {
+                    throw new Error("Firebase Android client is missing api_key.current_key");
+                  }
+                  NODE
+              env:
+                  ANDROID_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_BASE64 }}
+
+            - name: Build Android
+              run: ${{ inputs.build_command }}
+              env:
+                  ANDROID_KEYSTORE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_STORE_PASSWORD }}
+                  ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+                  ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+            - name: Run Android lint
+              if: ${{ inputs.run_lint }}
+              run: ./gradlew lint
+
+            - name: Upload Android lint results
+              if: ${{ always() && inputs.run_lint }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ inputs.lint_artifact_name }}
+                  path: ./composeApp/build/reports/*.html
+
+            - name: Upload Android artifact
+              if: ${{ inputs.upload_artifact }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ inputs.artifact_name }}
+                  path: ${{ inputs.artifact_path }}

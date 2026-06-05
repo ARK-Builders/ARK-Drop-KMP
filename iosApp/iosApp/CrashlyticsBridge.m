@@ -1,0 +1,37 @@
+#import "CrashlyticsBridge.h"
+@import FirebaseCore;
+@import FirebaseCrashlytics;
+
+void crashlytics_recordError(const char *message, const char *stackTrace) {
+    if ([FIRApp defaultApp] == nil) return;
+    FIRCrashlytics *crashlytics = [FIRCrashlytics crashlytics];
+
+    NSString *msg = [NSString stringWithUTF8String:message];
+    NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+    userInfo[NSLocalizedDescriptionKey] = msg;
+
+    if (stackTrace != NULL) {
+        NSString *stack = [NSString stringWithUTF8String:stackTrace];
+        userInfo[@"KotlinStackTrace"] = stack;
+    }
+
+    NSError *error = [NSError errorWithDomain:@"DropKMP"
+                                         code:-1
+                                     userInfo:userInfo];
+    [crashlytics recordError:error];
+}
+
+void crashlytics_log(const char *message) {
+    if ([FIRApp defaultApp] == nil) return;
+    if (message == NULL) return;
+    NSString *msg = [NSString stringWithUTF8String:message];
+    [[FIRCrashlytics crashlytics] logWithFormat:@"%@", msg];
+}
+
+void crashlytics_setCustomKey(const char *key, const char *value) {
+    if ([FIRApp defaultApp] == nil) return;
+    if (key == NULL) return;
+    NSString *k = [NSString stringWithUTF8String:key];
+    NSString *v = value != NULL ? [NSString stringWithUTF8String:value] : @"";
+    [[FIRCrashlytics crashlytics] setCustomValue:v forKey:k];
+}
