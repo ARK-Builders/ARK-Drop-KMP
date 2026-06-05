@@ -86,6 +86,8 @@ Firebase config secrets present in both `Development` and `Production`:
 
 Use the same secret names in both environments. Only the secret values differ: `Development` values must come from `ark-drop-test`, and `Production` values must come from `ark-drop-prod`.
 
+Firebase config is CI-only and must not be committed. Local development and tests must work without Firebase config; iOS Firebase analytics/crash-reporting calls no-op when no bundled Firebase plist is present.
+
 Android signing secrets present in both `Development` and `Production`:
 
 - [ ] `ANDROID_KEYSTORE_ENCRYPTED`: encrypted ASCII-armored Android keystore, written to `keystore.asc` in CI.

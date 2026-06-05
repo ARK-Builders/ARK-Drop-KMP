@@ -6,7 +6,9 @@ import FirebaseCore
 struct iOSApp: App {
     init() {
         // Initialize Firebase, app configuration and DI
-        FirebaseApp.configure()
+        if Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil {
+            FirebaseApp.configure()
+        }
         AppConfiguration.shared.initialize()
     }
     

@@ -205,3 +205,5 @@ These are declared in `Info.plist`.
 3. Build and run (⌘R)
 
 The Gradle build will automatically compile the Kotlin shared module.
+
+Firebase config is provided by CI for shared development and production builds. Local iOS runs do not require `GoogleService-Info.plist`; Firebase instrumentation is disabled when the plist is absent.

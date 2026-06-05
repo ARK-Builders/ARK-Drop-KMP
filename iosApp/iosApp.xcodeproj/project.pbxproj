@@ -142,7 +142,7 @@
 			mainGroup = 7C29D5070F6F808BD9FE5AB5;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				87961AEC2F239F6600972E0D /* XCRemoteSwiftPackageReference "arkdrop-swift-binaries" */,
+				87961AEC2F239F6600972E0D /* XCRemoteSwiftPackageReference "ARK-iOS" */,
 				2B1B978E2FC2089900B54BD3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -423,12 +423,12 @@
 				version = 12.11.0;
 			};
 		};
-		87961AEC2F239F6600972E0D /* XCRemoteSwiftPackageReference "arkdrop-swift-binaries" */ = {
+		87961AEC2F239F6600972E0D /* XCRemoteSwiftPackageReference "ARK-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/oluiscabral/arkdrop-swift-binaries";
+			repositoryURL = "https://github.com/ARK-Builders/ARK-iOS";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = exactVersion;
+				version = 0.1.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -451,7 +451,7 @@
 		};
 		87961AED2F239F6600972E0D /* ArkDrop */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 87961AEC2F239F6600972E0D /* XCRemoteSwiftPackageReference "arkdrop-swift-binaries" */;
+			package = 87961AEC2F239F6600972E0D /* XCRemoteSwiftPackageReference "ARK-iOS" */;
 			productName = ArkDrop;
 		};
 /* End XCSwiftPackageProductDependency section */

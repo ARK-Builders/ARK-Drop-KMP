@@ -1,7 +1,9 @@
 #import "AnalyticsBridge.h"
+@import FirebaseCore;
 @import FirebaseAnalytics;
 
 void analytics_logEvent(const char *name, const char *jsonParams) {
+    if ([FIRApp defaultApp] == nil) return;
     if (name == NULL) return;
 
     NSString *eventName = [NSString stringWithUTF8String:name];

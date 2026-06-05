@@ -20,12 +20,12 @@
       }
     },
     {
-      "identity" : "arkdrop-swift-binaries",
+      "identity" : "ark-ios",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/oluiscabral/arkdrop-swift-binaries",
+      "location" : "https://github.com/ARK-Builders/ARK-iOS",
       "state" : {
-        "branch" : "main",
-        "revision" : "e57f102d36001152f41862fe140e1e2f243c02a4"
+        "revision" : "31388d3ce720b68a3e54637f200d83381addb327",
+        "version" : "0.1.1"
       }
     },
     {
